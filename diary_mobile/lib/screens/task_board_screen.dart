@@ -1,3 +1,4 @@
+// lib/screens/task_board_screen.dart
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
 import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/screens/build_empty_state.dart';
@@ -24,10 +25,17 @@ class TaskBoardScreen extends StatefulWidget {
 
 class _TaskBoardScreenState extends State<TaskBoardScreen>
     with SingleTickerProviderStateMixin {
+  // We'll still use these maps to track intended expansion states for UI consistency
+  // but the actual expansion will be driven by ExpansionTileControllers.
   final Map<String, bool> _statusExpandedState = {};
   final Map<int, bool> _pageExpandedState = {};
+
+  // --- NEW: Map to hold ExpansionTileControllers ---
+  final Map<String, ExpansionTileController> _expansionTileControllers = {};
+
   final ScrollController _scrollController = ScrollController();
   String? _fetchErrorMessage;
+  int _scrollTrigger = 0;
 
   int? _pageToScrollTo;
   TaskStatus? _statusToExpand;
@@ -36,12 +44,9 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   DateTime? _selectedDate;
   List<TaskDto> _filteredTasks = [];
   bool _isFiltering = false;
+  bool _isScrollingFromSearch = false; // New flag
 
   late TabController _tabController;
-
-  // New: Maps to hold ExpansionTileControllers
-  final Map<int, ExpansionTileController> _pageControllers = {};
-  final Map<String, ExpansionTileController> _statusControllers = {};
 
   @override
   void initState() {
@@ -60,29 +65,48 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
 
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        setState(() {
-          // Clear scroll and expansion targets when tab changes
-          _pageToScrollTo = null;
-          _statusToExpand = null;
-          // Optionally collapse all expansions when changing tabs, but use controllers
-          _collapseAllTiles(); // New method to explicitly collapse via controllers
-        });
+        if (_tabController.index == 0) {
+          setState(() {
+            // Trigger scroll on tab change to 'All Tasks' if there's a pending scroll target
+            // This is crucial if a search result was clicked and the user was on another tab
+            if (_pageToScrollTo != null) {
+              _scrollTrigger++;
+            }
+          });
+        } else {
+          setState(() {
+            _pageToScrollTo = null;
+            _statusToExpand = null;
+            // Clear expansion states when switching tabs (optional, but good for clean UI)
+            _pageExpandedState.clear();
+            _statusExpandedState.clear();
+            _isScrollingFromSearch = false; // Reset flag on tab switch
+            // Close all expansion tiles when switching tabs
+            _expansionTileControllers.values.forEach((controller) {
+              if (controller.isExpanded) {
+                controller.collapse();
+              }
+            });
+            // It's generally better not to clear the controllers themselves here,
+            // but rather manage their expansion state. If they are cleared,
+            // they would need to be re-created by the child widgets on subsequent visits.
+            // For now, let's keep them and just collapse.
+          });
+        }
       }
     });
   }
 
-  void _collapseAllTiles() {
-    // Collapse all page tiles
-    _pageControllers.values.forEach((controller) {
-      if (controller.isExpanded) controller.collapse();
-    });
-    // Collapse all status tiles
-    _statusControllers.values.forEach((controller) {
-      if (controller.isExpanded) controller.collapse();
-    });
-    // Also clear the state maps to keep them in sync
-    _pageExpandedState.clear();
-    _statusExpandedState.clear();
+  // --- NEW: Method to get or create ExpansionTileController ---
+  // This method is primarily for TaskBoardScreen itself if it were to manage
+  // controllers for top-level ExpansionTiles. For child widgets, they will use
+  // the map passed down. This specific method might not be directly used here,
+  // but it indicates the intent of managing controllers in a map.
+  ExpansionTileController _getOrCreateExpansionTileController(String key) {
+    return _expansionTileControllers.putIfAbsent(
+      key,
+      () => ExpansionTileController(),
+    );
   }
 
   String _formatDate(DateTime? date) {
@@ -122,10 +146,18 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       _selectedDate = null;
       _isFiltering = false;
       _filteredTasks = [];
-      _pageToScrollTo = null;
-      _statusToExpand = null;
-      // Also clear expansions when search is cleared, and collapse via controllers
-      _collapseAllTiles(); // Use the new collapse method
+      if (!_isScrollingFromSearch) {
+        _pageToScrollTo = null;
+        _statusToExpand = null;
+      }
+      _pageExpandedState.clear();
+      _statusExpandedState.clear();
+      // Optionally collapse all tiles when search is cleared, if they are open.
+      _expansionTileControllers.values.forEach((controller) {
+        if (controller.isExpanded) {
+          controller.collapse();
+        }
+      });
     });
   }
 
@@ -144,63 +176,93 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     }
   }
 
-  GlobalKey _getPageGlobalKey(int pageId) {
-    return GlobalObjectKey(pageId);
+  final Map<String, GlobalKey> _globalKeys = {};
+
+  GlobalKey _getPageGlobalKey(String viewPrefix, int pageId) {
+    final String keyString = '$viewPrefix-$pageId';
+    final GlobalKey key = _globalKeys.putIfAbsent(
+      keyString,
+      () => GlobalObjectKey(
+        keyString,
+      ), // Ensures a unique key instance per pageId
+    );
+    print(
+      'TaskBoardScreen: _getPageGlobalKey called for $keyString. Key instance: $key',
+    );
+    return key;
   }
 
   void _scrollToPageAndStatus(int pageId, TaskStatus status) {
-    // Ensure all tiles are collapsed before expanding the target ones
-    // This provides a clean slate and avoids multiple open tiles by mistake
-    _collapseAllTiles(); // Important!
-
-    // 1. Switch to "All Tasks" tab
-    _tabController.animateTo(0);
-
-    // 2. Update the expansion states (these will be read by PageListItem's didUpdateWidget)
+    print(
+      'TaskBoardScreen: _scrollToPageAndStatus called with pageId: $pageId, status: $status',
+    );
     setState(() {
+      _isScrollingFromSearch = true; // Set the flag
       _pageToScrollTo = pageId;
       _statusToExpand = status;
-      _pageExpandedState[pageId] = true; // Mark page as expanded
-      // Mark status as expanded
-      _statusExpandedState['page_${pageId}_status_${status.index}'] = true;
+      _isFiltering = false; // Hide the search results overlay
+      _searchController.clear(); // Clear search text to remove overlay
+
+      // Increment scrollTrigger to ensure AllTasksView rebuilds and checks for scroll
+      _scrollTrigger++;
+      print(
+        'TaskBoardScreen: After setState in _scrollToPageAndStatus: _pageToScrollTo = $_pageToScrollTo, _scrollTrigger = $_scrollTrigger',
+      );
     });
 
-    // 3. Wait for the next frame to ensure the widgets are built with expanded state
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Find or create the controllers for the target page and status
-      final pageController = _pageControllers.putIfAbsent(
-        pageId,
-        () => ExpansionTileController(),
-      );
-      final statusController = _statusControllers.putIfAbsent(
-        'page_${pageId}_status_${status.index}',
-        () => ExpansionTileController(),
-      );
-
-      // Programmatically expand the tiles
-      if (!pageController.isExpanded) {
-        pageController.expand();
-      }
-      if (!statusController.isExpanded) {
-        statusController.expand();
-      }
-
-      final GlobalKey key = _getPageGlobalKey(pageId);
-      if (key.currentContext != null) {
-        Scrollable.ensureVisible(
-          key.currentContext!,
-          duration: const Duration(milliseconds: 500),
+    // If we are not already on the "All Tasks" tab (index 0), switch to it.
+    if (_tabController.index != 0) {
+      print('TaskBoardScreen: Switching to All Tasks tab.');
+      if (mounted) {
+        _tabController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
-          // Adjust alignment if needed; 0.0 is top, 1.0 is bottom, 0.5 is center
-          alignment: 0.05, // A little offset from the very top
         );
       }
-      // 4. Clear the scroll/expansion targets after scrolling is initiated
-      // This prevents re-scrolling/re-expanding on subsequent rebuilds
-      setState(() {
-        _pageToScrollTo = null;
-        _statusToExpand = null;
-      });
+    }
+  }
+
+  void _onScrollAndExpand(int pageId, TaskStatus status) {
+    print(
+      'TaskBoardScreen: _onScrollAndExpand callback received for page $pageId, status $status',
+    );
+
+    setState(() {
+      // Clear all expansion states before expanding the target
+      _pageExpandedState.clear();
+      _statusExpandedState.clear();
+
+      // Set the intended expanded state for the target page and status
+      _pageExpandedState[pageId] = true;
+      _statusExpandedState['status_${pageId}_${status.index}'] = true;
+    });
+
+    // Explicitly expand the page ExpansionTile
+    final String pageKey = 'page_$pageId';
+    final ExpansionTileController? pageController =
+        _expansionTileControllers[pageKey];
+    if (pageController != null && !pageController.isExpanded) {
+      print('TaskBoardScreen: Expanding page tile for key: $pageKey');
+      pageController.expand();
+    }
+
+    // Explicitly expand the status ExpansionTile within that page
+    final String statusKey = 'status_${pageId}_${status.index}';
+    final ExpansionTileController? statusController =
+        _expansionTileControllers[statusKey];
+    if (statusController != null && !statusController.isExpanded) {
+      print('TaskBoardScreen: Expanding status tile for key: $statusKey');
+      statusController.expand();
+    }
+
+    // Ensure _pageToScrollTo and _statusToExpand are nullified after successful scroll and expand
+    // This is important to prevent re-triggering the scroll/expansion on subsequent rebuilds.
+    setState(() {
+      _pageToScrollTo = null;
+      _statusToExpand = null;
+      _isScrollingFromSearch =
+          false; // Reset the flag once expansion is triggered
     });
   }
 
@@ -212,11 +274,14 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _tabController.dispose();
-    // Dispose all controllers to prevent memory leaks
-    _pageControllers.values.forEach((controller) => controller.dispose());
-    _statusControllers.values.forEach((controller) => controller.dispose());
+    // Dispose of all ExpansionTileControllers when the screen is disposed
+    _expansionTileControllers.values.forEach(
+      (controller) => controller.dispose(),
+    );
+    _expansionTileControllers.clear();
     super.dispose();
   }
 
@@ -255,20 +320,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     final List<int> sortedPageIds = tasksByPage.keys.toList()
       ..sort((a, b) => b.compareTo(a));
 
-    // Ensure controllers exist for all current pages and statuses that might be displayed
-    for (int pageId in sortedPageIds) {
-      _pageControllers.putIfAbsent(pageId, () => ExpansionTileController());
-      for (var status in TaskStatus.values.where(
-        (s) => s != TaskStatus.deleted,
-      )) {
-        final String expansionTileKey = 'page_${pageId}_status_${status.index}';
-        _statusControllers.putIfAbsent(
-          expansionTileKey,
-          () => ExpansionTileController(),
-        );
-      }
-    }
-
     if (taskProvider.errorMessage != null) {
       return ErrorStateScreen(
         themeProvider: themeProvider,
@@ -302,12 +353,12 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       const Tab(text: 'All Tasks'),
       ...TaskStatus.values
           .where((status) => status != TaskStatus.deleted)
-          .map((status) => Tab(text: status.toApiString()))
-          .toList(),
+          .map((status) => Tab(text: status.toApiString())),
     ];
 
     final List<Widget> tabViews = [
       AllTasksView(
+        scrollTrigger: _scrollTrigger,
         tasksToShow: tasksToShow,
         tasksByPage: tasksByPage,
         sortedPageIds: sortedPageIds,
@@ -321,8 +372,15 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         scrollController: _scrollController,
         pageToScrollTo: _pageToScrollTo,
         statusToExpand: _statusToExpand,
-        pageControllers: _pageControllers, // Pass controllers
-        statusControllers: _statusControllers, // Pass controllers
+        onScrollComplete: () {
+          setState(() {
+            _pageToScrollTo = null;
+            _statusToExpand = null;
+            _isScrollingFromSearch = false;
+          });
+        },
+        onScrollAndExpand: _onScrollAndExpand,
+        expansionTileControllers: _expansionTileControllers,
       ),
       ...TaskStatus.values
           .where((status) => status != TaskStatus.deleted)
@@ -342,11 +400,17 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               pageToScrollTo: _pageToScrollTo,
               statusToExpand: _statusToExpand,
               filterStatus: status,
-              pageControllers: _pageControllers, // Pass controllers
-              statusControllers: _statusControllers, // Pass controllers
+              onScrollComplete: () {
+                setState(() {
+                  _pageToScrollTo = null;
+                  _statusToExpand = null;
+                  _isScrollingFromSearch = false;
+                });
+              },
+              // --- ADDED: Pass the expansionTileControllers map ---
+              expansionTileControllers: _expansionTileControllers,
             ),
-          )
-          .toList(),
+          ),
     ];
 
     return DefaultTabController(
@@ -377,7 +441,9 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                    fillColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
@@ -452,7 +518,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                                     task.pageId,
                                     task.status,
                                   );
-                                  _clearSearch();
                                 },
                               ),
                             );

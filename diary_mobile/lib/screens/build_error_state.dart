@@ -38,13 +38,13 @@ class _ErrorStateScreenState extends State<ErrorStateScreen>
     _dummyTabController = TabController(
       length:
           TaskStatus.values.where((s) => s != TaskStatus.deleted).length + 1,
-      vsync: this, // Use this for vsync
+      vsync: this,
     );
   }
 
   @override
   void dispose() {
-    _dummyTabController.dispose(); // Dispose the dummy controller
+    _dummyTabController.dispose();
     super.dispose();
   }
 
@@ -71,8 +71,7 @@ class _ErrorStateScreenState extends State<ErrorStateScreen>
       const Tab(text: 'All'),
       ...TaskStatus.values
           .where((status) => status != TaskStatus.deleted)
-          .map((status) => Tab(text: status.toApiString()))
-          .toList(),
+          .map((status) => Tab(text: status.toApiString())),
     ];
 
     return Scaffold(
@@ -91,7 +90,9 @@ class _ErrorStateScreenState extends State<ErrorStateScreen>
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                   suffixIcon: const Icon(Icons.search),
                 ),
               ),

@@ -25,8 +25,7 @@ Widget buildEmptyState(
     const Tab(text: 'All'),
     ...TaskStatus.values
         .where((status) => status != TaskStatus.deleted)
-        .map((status) => Tab(text: status.toApiString()))
-        .toList(),
+        .map((status) => Tab(text: status.toApiString())),
   ];
 
   return Scaffold(
@@ -45,7 +44,9 @@ Widget buildEmptyState(
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
                 suffixIcon: const Icon(Icons.search),
               ),
             ),
