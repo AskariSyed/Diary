@@ -1,185 +1,110 @@
-// import 'package:flutter/material.dart';
-// import 'package:diary_pta/models/task_dto.dart';
-// import 'package:diary_pta/providers/task_provider.dart';
-// import 'package:diary_pta/mixin/taskstatus.dart';
+import 'package:diary_mobile/dialogs/show_edit_task_dialog.dart';
+import 'package:diary_mobile/dialogs/task_history_dialog.dart';
+import 'package:diary_mobile/mixin/taskstatus.dart';
+import 'package:diary_mobile/models/task_dto.dart';
+import 'package:diary_mobile/providers/task_provider.dart';
+import 'package:flutter/material.dart';
 
-// Widget buildTaskCard(
-//   BuildContext context,
-//   TaskDto task,
-//   TaskProvider taskProvider,
-//   bool isDraggableAndEditable,
-// ) {
-//   final Brightness currentBrightness = Theme.of(context).brightness;
+Widget buildTaskCard(
+  TaskDto task,
+  TaskProvider taskProvider,
+  bool isDraggableAndEditable,
+  BuildContext context,
+) {
+  return Card(
+    margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          title: Text(
+            task.title,
+            style: TextStyle(
+              decoration: task.status == TaskStatus.complete
+                  ? TextDecoration.lineThrough
+                  : null,
+            ),
+          ),
+          subtitle: Text(
+            task.parentTaskCreatedAt != null
+                ? 'Created At: ${task.parentTaskCreatedAt!.toLocal().toString().split('.').first}'
+                : 'Created At: Unknown',
+            style: const TextStyle(color: Colors.grey),
+          ),
 
-//   final card = GestureDetector(
-//     onTap: () {
-//       if (isDraggableAndEditable) {
-//         _showEditTaskDialog(context, taskProvider, task);
-//       }
-//     },
-//     child: Card(
-//       margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-//       elevation: 1.0,
-//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-//       color:
-//           currentBrightness == Brightness.dark
-//               ? Colors.grey[850]
-//               : Colors.white,
-//       child: Padding(
-//         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-//         child: Row(
-//           children: [
-//             Expanded(
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   Text(
-//                     task.title,
-//                     style: TextStyle(
-//                       fontSize: 15.0,
-//                       fontWeight: FontWeight.w500,
-//                       decoration:
-//                           task.status == TaskStatus.complete
-//                               ? TextDecoration.lineThrough
-//                               : null,
-//                       color: Theme.of(context).textTheme.bodyLarge?.color,
-//                     ),
-//                     maxLines: 2,
-//                     overflow: TextOverflow.ellipsis,
-//                   ),
-//                   const SizedBox(height: 4.0),
-//                   Text(
-//                     'ID: ${task.id} ${task.parentTaskId != null ? '(Parent: ${task.parentTaskId})' : ''}',
-//                     style: TextStyle(fontSize: 11.0, color: Colors.grey[600]),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     ),
-//   );
+          trailing: IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () => _confirmDeleteTask(context, taskProvider, task),
+          ),
+          onTap: () => showEditTaskDialog(context, taskProvider, task),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
+          child: ElevatedButton.icon(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (_) => TaskHistoryDialog(taskId: task.id),
+              );
+            },
+            icon: const Icon(Icons.history),
+            label: const Text('Report'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueGrey,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
-//   if (isDraggableAndEditable) {
-//     return LongPressDraggable<TaskDto>(
-//       data: task,
-//       feedback: Material(
-//         elevation: 4.0,
-//         child: ConstrainedBox(
-//           constraints: const BoxConstraints(maxWidth: 200),
-//           child: card,
-//         ),
-//       ),
-//       childWhenDragging: Opacity(opacity: 0.5, child: card),
-//       child: card,
-//     );
-//   } else {
-//     return card;
-//   }
-// }
-
-// void _showEditTaskDialog(
-//   BuildContext context,
-//   TaskProvider taskProvider,
-//   TaskDto task,
-// ) {
-//   final TextEditingController taskTitleController = TextEditingController(
-//     text: task.title,
-//   );
-//   showDialog(
-//     context: context,
-//     builder: (context) {
-//       return AlertDialog(
-//         title: const Text('Edit Task Title'),
-//         content: TextField(
-//           controller: taskTitleController,
-//           decoration: const InputDecoration(labelText: 'Task Title'),
-//           autofocus: true,
-//         ),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.pop(context),
-//             child: const Text('Cancel'),
-//           ),
-//           ElevatedButton(
-//             onPressed: () async {
-//               if (taskTitleController.text.isNotEmpty) {
-//                 try {
-//                   await taskProvider.updateTask(
-//                     task.id,
-//                     taskTitleController.text,
-//                     task.status,
-//                   );
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     const SnackBar(
-//                       content: Text('Task title updated successfully!'),
-//                     ),
-//                   );
-//                   Navigator.pop(context);
-//                 } catch (e) {
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     SnackBar(
-//                       content: Text(
-//                         'Failed to update task title: ${taskProvider.errorMessage}',
-//                       ),
-//                     ),
-//                   );
-//                 }
-//               } else {
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   const SnackBar(content: Text('Task title cannot be empty.')),
-//                 );
-//               }
-//             },
-//             child: const Text('Update'),
-//           ),
-//         ],
-//       );
-//     },
-//   );
-// }
-
-// void _confirmDeleteTask(
-//   BuildContext context,
-//   TaskProvider taskProvider,
-//   TaskDto task,
-// ) {
-//   showDialog(
-//     context: context,
-//     builder: (context) {
-//       return AlertDialog(
-//         title: const Text('Delete Task'),
-//         content: Text('Are you sure you want to delete "${task.title}"?'),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.pop(context),
-//             child: const Text('Cancel'),
-//           ),
-//           ElevatedButton(
-//             onPressed: () async {
-//               try {
-//                 await taskProvider.deleteTask(task.id);
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   const SnackBar(content: Text('Task deleted successfully!')),
-//                 );
-//                 Navigator.pop(context);
-//               } catch (e) {
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   SnackBar(
-//                     content: Text(
-//                       'Failed to delete task: ${taskProvider.errorMessage}',
-//                     ),
-//                   ),
-//                 );
-//               }
-//             },
-//             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-//             child: const Text('Delete'),
-//           ),
-//         ],
-//       );
-//     },
-//   );
-// }
+void _confirmDeleteTask(
+  BuildContext context,
+  TaskProvider taskProvider,
+  TaskDto task,
+) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Delete Task'),
+        content: Text(
+          'Are you sure you want to delete "${task.title}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await taskProvider.updateTask(
+                  task.id,
+                  task.title,
+                  TaskStatus.deleted,
+                );
+                Future.microtask(
+                  () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Task deleted successfully!')),
+                  ),
+                );
+                Navigator.pop(context);
+              } catch (e) {
+                Future.microtask(
+                  () => ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete task: $e')),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      );
+    },
+  );
+}

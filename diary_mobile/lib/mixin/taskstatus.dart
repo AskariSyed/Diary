@@ -1,4 +1,12 @@
-enum TaskStatus { backlog, inProgress, toDiscuss, toFollowUp, onHold, complete }
+enum TaskStatus {
+  backlog,
+  inProgress,
+  toDiscuss,
+  toFollowUp,
+  onHold,
+  complete,
+  deleted,
+}
 
 extension TaskStatusExtension on TaskStatus {
   String toApiString() {
@@ -15,6 +23,8 @@ extension TaskStatusExtension on TaskStatus {
         return 'To follow up';
       case TaskStatus.complete:
         return 'completed';
+      case TaskStatus.deleted:
+        return 'deleted';
     }
   }
 
@@ -33,19 +43,19 @@ extension TaskStatusExtension on TaskStatus {
         return TaskStatus.toFollowUp;
       case 'completed':
         return TaskStatus.complete;
+      case 'deleted':
+        return TaskStatus.deleted;
 
       default:
         print(
           'Warning: Unknown TaskStatus string received from API: $statusString. Defaulting to backlog.',
         );
-        // Optionally, return a default like TaskStatus.backlog if you don't want to crash
-        return TaskStatus
-            .backlog; // Or throw ArgumentError('Unknown TaskStatus string: $statusString');
+
+        return TaskStatus.backlog;
     }
   }
 }
 
-// Add a convenience method to String to use fromApiString
 extension StringToTaskStatusExtension on String {
   TaskStatus fromApiString() {
     return TaskStatusExtension.fromApiString(this);

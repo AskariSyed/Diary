@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "g0eS4JAzVm8=",
+  "dgSpecHash": "WkOUi5S4fos=",
   "success": true,
-  "projectFilePath": "C:\\Users\\HP\\source\\repos\\DiaryApi\\DiaryApi.csproj",
+  "projectFilePath": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\DiaryApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\HP\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\HP\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\7.0.0\\microsoft.bcl.asyncinterfaces.7.0.0.nupkg.sha512",

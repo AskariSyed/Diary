@@ -3,9 +3,11 @@ import '/mixin/taskstatus.dart';
 class TaskDto {
   final int id;
   final int pageId;
-  final int? parentTaskId; // Nullable as per typical API designs
+  final int? parentTaskId;
   final String title;
   final TaskStatus status;
+  final DateTime? pageDate;
+  final DateTime? parentTaskCreatedAt;
 
   TaskDto({
     required this.id,
@@ -13,6 +15,8 @@ class TaskDto {
     this.parentTaskId,
     required this.title,
     required this.status,
+    this.pageDate,
+    this.parentTaskCreatedAt, // NEW
   });
 
   factory TaskDto.fromJson(Map<String, dynamic> json) {
@@ -22,6 +26,12 @@ class TaskDto {
       parentTaskId: json['parentTaskId'] as int?,
       title: json['title'] as String,
       status: (json['status'] as String).fromApiString(),
+      pageDate: json['pageDate'] != null
+          ? DateTime.tryParse(json['pageDate'])
+          : null,
+      parentTaskCreatedAt: json['parentTaskCreatedAt'] != null
+          ? DateTime.tryParse(json['parentTaskCreatedAt'])
+          : null, // parse safely
     );
   }
 
@@ -32,6 +42,8 @@ class TaskDto {
       'parentTaskId': parentTaskId,
       'title': title,
       'status': status.toApiString(),
+      'pageDate': pageDate?.toIso8601String(),
+      'parentTaskCreatedAt': parentTaskCreatedAt?.toIso8601String(), // NEW
     };
   }
 
@@ -41,6 +53,8 @@ class TaskDto {
     int? parentTaskId,
     String? title,
     TaskStatus? status,
+    DateTime? pageDate,
+    DateTime? parentTaskCreatedAt, // NEW
   }) {
     return TaskDto(
       id: id ?? this.id,
@@ -48,6 +62,8 @@ class TaskDto {
       parentTaskId: parentTaskId ?? this.parentTaskId,
       title: title ?? this.title,
       status: status ?? this.status,
+      pageDate: pageDate ?? this.pageDate,
+      parentTaskCreatedAt: parentTaskCreatedAt ?? this.parentTaskCreatedAt,
     );
   }
 }

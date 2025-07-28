@@ -64,6 +64,18 @@ namespace DiaryApi.Dtos
         public int ParentTaskId { get; set; }
         public string Status { get; set; }
         public string Title { get; set; }
+        public DateTime PageDate { get; set; }
+
+        public DateTime ParentTaskCreatedAt { get; set; }
+    }
+
+    public class TaskHistoryDto
+    {
+        public int PageTaskId { get; set; }
+        public int PageId { get; set; }
+        public DateTime PageDate { get; set; }
+        public string Title { get; set; }
+        public string Status { get; set; }
     }
 }
 

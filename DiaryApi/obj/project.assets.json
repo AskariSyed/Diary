@@ -3331,11 +3331,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\HP\\source\\repos\\DiaryApi\\DiaryApi.csproj",
+      "projectUniqueName": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\DiaryApi.csproj",
       "projectName": "DiaryApi",
-      "projectPath": "C:\\Users\\HP\\source\\repos\\DiaryApi\\DiaryApi.csproj",
+      "projectPath": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\DiaryApi.csproj",
       "packagesPath": "C:\\Users\\HP\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\HP\\source\\repos\\DiaryApi\\obj\\",
+      "outputPath": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

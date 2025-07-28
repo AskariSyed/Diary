@@ -5,7 +5,7 @@ using DiaryApi.Models;
 using DiaryApi.Dtos;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Collections.Generic; // Added for List<PageTask>
+using System.Collections.Generic;
 
 namespace DiaryApi.Controllers
 {
@@ -19,8 +19,6 @@ namespace DiaryApi.Controllers
         {
             _context = context;
         }
-
-        // POST: api/tasks/create
         [HttpPost("create")]
         public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto createTaskDto)
         {
@@ -55,8 +53,6 @@ namespace DiaryApi.Controllers
 
             return Ok(new { TaskId = parentTask.Id, PageTaskId = pageTask.Id });
         }
-
-        // PUT: api/tasks/pagetask/{pageTaskId}/status
         [HttpPut("pagetask/{pageTaskId}/status")]
         public async Task<IActionResult> UpdatePageTaskStatus(int pageTaskId, [FromBody] UpdateTaskStatusDto updateDto)
         {
@@ -77,8 +73,6 @@ namespace DiaryApi.Controllers
 
             return NoContent();
         }
-
-        // PUT: api/tasks/pagetask/{pageTaskId}/title
         [HttpPut("pagetask/{pageTaskId}/title")]
         public async Task<IActionResult> UpdatePageTaskTitle(int pageTaskId, [FromBody] UpdateTaskTitleDto updateDto)
         {
@@ -99,35 +93,71 @@ namespace DiaryApi.Controllers
 
             return NoContent();
         }
-
-        // GET: api/tasks/allpagetasks
-        /// <summary>
-        /// Retrieves all PageTasks, sorted by PageId, returning only necessary fields.
-        /// </summary>
-        /// <returns>A list of PageTaskResponseDto objects.</returns>
         [HttpGet("allpagetasks")]
         public async Task<ActionResult<IEnumerable<PageTaskResponseDto>>> GetAllPageTasksSortedByPageId()
         {
             var pageTasks = await _context.PageTasks
+                                          .Include(pt => pt.Page)
+                                          .Include(pt => pt.ParentTask)  // Include ParentTask to access CreatedAt
                                           .OrderBy(pt => pt.PageId)
-                                          .Select(pt => new PageTaskResponseDto // Project to DTO
+                                          .Select(pt => new PageTaskResponseDto
                                           {
                                               Id = pt.Id,
                                               PageId = pt.PageId,
                                               ParentTaskId = pt.ParentTaskId,
                                               Status = pt.Status,
-                                              Title = pt.Title
+                                              Title = pt.Title,
+                                              PageDate = pt.Page.PageDate,
+                                              ParentTaskCreatedAt = pt.ParentTask.CreatedAt
                                           })
                                           .ToListAsync();
 
             return Ok(pageTasks);
         }
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<PageTaskResponseDto>>> SearchPageTasks(
+    [FromQuery] int? pageId,
+    [FromQuery] DateTime? pageDate,
+    [FromQuery] string? title)
+        {
+            IQueryable<PageTask> query = _context.PageTasks
+                .Include(pt => pt.Page)
+                .Include(pt => pt.ParentTask);
 
-        // NEW: DELETE endpoint for PageTasks
-        // DELETE: api/tasks/pagetask/{pageTaskId}
-        /// <summary>
-        /// Deletes a specific PageTask by its ID.
-        /// </summary>
+            if (pageId.HasValue)
+            {
+                query = query.Where(pt => pt.PageId == pageId.Value);
+            }
+
+            if (pageDate.HasValue)
+            {
+                query = query.Where(pt => pt.Page.PageDate.Date == pageDate.Value.Date);
+            }
+
+            if (!string.IsNullOrEmpty(title))
+            {
+                string lowerTitle = title.ToLower();
+                query = query.Where(pt => pt.Title.ToLower().Contains(lowerTitle));
+            }
+
+            var result = await query
+                .OrderBy(pt => pt.PageId)
+                .Select(pt => new PageTaskResponseDto
+                {
+                    Id = pt.Id,
+                    PageId = pt.PageId,
+                    ParentTaskId = pt.ParentTaskId,
+                    Status = pt.Status,
+                    Title = pt.Title,
+                    PageDate = pt.Page.PageDate,
+                    ParentTaskCreatedAt = pt.ParentTask.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(result);
+        }
+
+
         /// <param name="pageTaskId">The ID of the PageTask to delete.</param>
         /// <returns>NoContent if successful, NotFound if the task does not exist.</returns>
         [HttpDelete("pagetask/{pageTaskId}")]
@@ -142,7 +172,45 @@ namespace DiaryApi.Controllers
             _context.PageTasks.Remove(pageTask);
             await _context.SaveChangesAsync();
 
-            return NoContent(); // 204 No Content indicates successful deletion
+            return NoContent();
         }
+        [HttpGet("task-history/by-parent/{parentTaskId}")]
+        public async Task<IActionResult> GetTaskHistoryByParentTaskId(int parentTaskId)
+        {
+            var history = await _context.PageTasks
+                                        .Include(pt => pt.Page)
+                                        .Where(pt => pt.ParentTaskId == parentTaskId)
+                                        .OrderBy(pt => pt.Page.PageDate)
+                                        .Select(pt => new TaskHistoryDto
+                                        {
+                                            PageTaskId = pt.Id,
+                                            PageId = pt.PageId,
+                                            PageDate = pt.Page.PageDate,
+                                            Title = pt.Title,
+                                            Status = pt.Status
+                                        })
+                                        .ToListAsync();
+
+            if (!history.Any())
+            {
+                return NotFound($"No task history found for ParentTask ID {parentTaskId}.");
+            }
+
+            return Ok(history);
+        }
+
+        [HttpGet("task-history/by-page-task/{pageTaskId}")]
+        public async Task<IActionResult> GetTaskHistoryByPageTaskId(int pageTaskId)
+        {
+            var pageTask = await _context.PageTasks.FindAsync(pageTaskId);
+            if (pageTask == null)
+            {
+                return NotFound($"PageTask with ID {pageTaskId} not found.");
+            }
+
+            return await GetTaskHistoryByParentTaskId(pageTask.ParentTaskId);
+        }
+
+
     }
 }

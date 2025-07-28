@@ -3,15 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '/models/task_dto.dart';
 import '/mixin/taskstatus.dart';
-import '/models/create_page_dto.dart'; // Import the new DTO
+import '/models/create_page_dto.dart';
+import '../models/task_history_dto.dart';
 
 class TaskProvider with ChangeNotifier {
   List<TaskDto> _tasks = [];
   bool _isLoading = false;
   String? _errorMessage;
 
-  final String _tasksBaseUrl = 'https://localhost:7050/api/Tasks';
-  final String _pagesBaseUrl = 'https://localhost:7050/api/Pages';
+  final String _tasksBaseUrl = 'http://192.168.137.1:5158/api/Tasks';
+  final String _pagesBaseUrl = 'http://192.168.137.1:5158/api/Pages';
 
   List<TaskDto> get tasks => _tasks;
   bool get isLoading => _isLoading;
@@ -20,14 +21,15 @@ class TaskProvider with ChangeNotifier {
   TaskProvider() {
     fetchTasks();
   }
+  void clearErrorMessage() {
+    _clearErrorMessage();
+  }
 
-  // Helper method to set error message and notify listeners
   void _setErrorMessage(String message) {
     _errorMessage = message;
     notifyListeners();
   }
 
-  // Helper method to clear error message
   void _clearErrorMessage() {
     if (_errorMessage != null) {
       _errorMessage = null;
@@ -271,16 +273,20 @@ class TaskProvider with ChangeNotifier {
               'Server responded with status ${response.statusCode}. Body: ${response.body}';
         }
         _setErrorMessage(errorMessage);
+        // You can optionally throw or just return -1
+        return -1;
       }
     } catch (e) {
       print('Error creating new page: $e');
       _setErrorMessage(
         'Failed to create new page due to network error or server issue. Check if backend is running.',
       );
+      return -1;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+
     return newPageId;
   }
 
@@ -294,5 +300,50 @@ class TaskProvider with ChangeNotifier {
   Future<int> getTargetPageIdForNewTask() async {
     final currentMostRecent = getCurrentMostRecentPageId();
     return currentMostRecent ?? 1;
+  }
+  // At the top of TaskProvider file
+
+  Future<List<TaskHistoryDto>> getTaskHistoryByParentId(
+    int parentTaskId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_tasksBaseUrl/task-history/by-parent/$parentTaskId'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => TaskHistoryDto.fromJson(json)).toList();
+      } else {
+        throw Exception(
+          'Failed to fetch task history. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('Error fetching task history by parentId: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<TaskHistoryDto>> getTaskHistoryByPageTaskId(
+    int pageTaskId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_tasksBaseUrl/task-history/by-page-task/$pageTaskId'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => TaskHistoryDto.fromJson(json)).toList();
+      } else {
+        throw Exception(
+          'Failed to fetch task history. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('Error fetching task history by pageTaskId: $e');
+      rethrow;
+    }
   }
 }
