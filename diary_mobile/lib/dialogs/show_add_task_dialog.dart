@@ -2,7 +2,7 @@ import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // for formatting
+import 'package:intl/intl.dart';
 
 void showAddTaskDialog(BuildContext context) {
   final TextEditingController taskTitleController = TextEditingController();

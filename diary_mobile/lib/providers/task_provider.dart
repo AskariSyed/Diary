@@ -38,7 +38,6 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  /// Fetches all PageTasks from the backend and updates the [_tasks] list.
   Future<void> fetchTasks() async {
     _isLoading = true;
     _clearErrorMessage();

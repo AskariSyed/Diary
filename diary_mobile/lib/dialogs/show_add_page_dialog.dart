@@ -2,13 +2,12 @@ import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:diary_mobile/widgets/shake_dialog_content.dart';
-import 'package:flutter/services.dart'; // For vibration/haptic feedback
+import 'package:flutter/services.dart';
 
 void showAddPageDialog(
   BuildContext context,
   TaskProvider taskProvider,
   int? scrollToPageId,
-  // REMOVED: Map<int, bool> pageExpandedState, // This parameter is removed
 ) {
   DateTime? selectedPageDate = DateTime.now();
   bool hasError = false;
@@ -85,29 +84,18 @@ void showAddPageDialog(
                   taskProvider.clearErrorMessage();
 
                   try {
-                    // This line is fine, it just gets the ID, doesn't depend on state.
                     final int? oldMostRecentPageId = taskProvider
                         .getCurrentMostRecentPageId();
 
                     final int newPageId = await taskProvider.createNewPage(
-                      1, // Hardcoded Diary No
+                      1,
                       selectedPageDate!,
                     );
 
                     if (newPageId != -1) {
                       Navigator.pop(context);
                       setStateSB(() {
-                        // The `scrollToPageId = newPageId;` line only updates a local variable
-                        // within the dialog's scope, which is fine.
-                        // It doesn't directly affect the TaskBoardScreen's _pageToScrollTo
-                        // unless you pass it back via Navigator.pop's result or a callback.
-                        // If TaskBoardScreen relies on this to scroll after the dialog closes,
-                        // you'll need to adjust how TaskBoardScreen consumes this.
-                        scrollToPageId =
-                            newPageId; // Still fine for local usage
-                        // REMOVED: if (oldMostRecentPageId != null) {
-                        // REMOVED:   pageExpandedState[oldMostRecentPageId] = false;
-                        // REMOVED: } // This block is removed
+                        scrollToPageId = newPageId;
                       });
                       Future.microtask(() {
                         ScaffoldMessenger.of(context).showSnackBar(

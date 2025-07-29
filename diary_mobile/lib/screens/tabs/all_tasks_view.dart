@@ -3,7 +3,6 @@ import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/widgets/page_list_item.dart';
 
-// Assuming ExpansibleController is defined or aliased elsewhere.
 abstract class ExpansibleController extends ChangeNotifier {
   bool get isExpanded;
   void expand();
@@ -54,17 +53,12 @@ class AllTasksView extends StatefulWidget {
 class _AllTasksViewState extends State<AllTasksView> {
   late PageController _pageController;
   late ScrollController _pageIndicatorScrollController;
-  int _currentPageIndex = 0; // Track the current page for the indicator
+  int _currentPageIndex = 0;
 
   static const double _kPageIndicatorHeight = 60.0;
-  // Calculate the ideal width for one unselected indicator (30w + 8m)
-  static const double _kIndividualIndicatorWidth =
-      30.0 + (4.0 * 2); // width + left/right margin
-  // Calculate the width needed to show exactly 3 unselected indicators
+  static const double _kIndividualIndicatorWidth = 30.0 + (4.0 * 2);
   static const double _kVisibleIndicatorBarWidth =
       _kIndividualIndicatorWidth * 5;
-
-  // Flag to prevent recursive calls between listeners
   bool _isAnimatingPageController = false;
   bool _isAnimatingIndicatorController = false;
 
@@ -74,8 +68,6 @@ class _AllTasksViewState extends State<AllTasksView> {
     _pageController = PageController();
     _pageIndicatorScrollController = ScrollController();
     _handleInitialScroll();
-
-    // Listener for main PageView scrolling
     _pageController.addListener(() {
       if (_pageController.page != null && !_isAnimatingPageController) {
         int newPageIndex = _pageController.page!.round();
@@ -83,34 +75,25 @@ class _AllTasksViewState extends State<AllTasksView> {
           setState(() {
             _currentPageIndex = newPageIndex;
           });
-          _isAnimatingIndicatorController =
-              true; // Set flag to prevent feedback loop
+          _isAnimatingIndicatorController = true;
           _scrollToCenterIndicator(newPageIndex).then((_) {
-            _isAnimatingIndicatorController =
-                false; // Reset flag after animation
+            _isAnimatingIndicatorController = false;
           });
         }
       }
     });
-
-    // Listener for indicator bar scrolling
     _pageIndicatorScrollController.addListener(() {
       if (_pageIndicatorScrollController.position.isScrollingNotifier.value &&
           !_isAnimatingIndicatorController) {
-        // Calculate the center of the currently visible part of the scroll bar
         final double centerScrollOffset =
             _pageIndicatorScrollController.offset +
             (_kVisibleIndicatorBarWidth / 2);
-        // Determine which indicator is closest to the center
         int targetIndex = (centerScrollOffset / _kIndividualIndicatorWidth)
             .round();
-
-        // Ensure targetIndex is within valid bounds
         targetIndex = targetIndex.clamp(0, widget.sortedPageIds.length - 1);
 
         if (targetIndex != _currentPageIndex) {
-          _isAnimatingPageController =
-              true; // Set flag to prevent feedback loop
+          _isAnimatingPageController = true;
           _pageController
               .animateToPage(
                 targetIndex,
@@ -118,8 +101,7 @@ class _AllTasksViewState extends State<AllTasksView> {
                 curve: Curves.easeInOut,
               )
               .then((_) {
-                _isAnimatingPageController =
-                    false; // Reset flag after animation
+                _isAnimatingPageController = false;
               });
         }
       }
@@ -182,22 +164,14 @@ class _AllTasksViewState extends State<AllTasksView> {
     }
   }
 
-  // Scrolls the page indicator bar to center the currently selected indicator
   Future<void> _scrollToCenterIndicator(int selectedIndex) async {
     final double maxScrollExtent =
         _pageIndicatorScrollController.position.maxScrollExtent;
     final double currentScrollOffset = _pageIndicatorScrollController.offset;
-
-    // Calculate the target offset to bring the selected indicator to the left edge
-    // and then center it within the visible 3-indicator window.
     double targetOffset =
         (selectedIndex * _kIndividualIndicatorWidth) -
         ((_kVisibleIndicatorBarWidth / 2) - (_kIndividualIndicatorWidth / 2));
-
-    // Clamp the targetOffset to prevent over-scrolling
     targetOffset = targetOffset.clamp(0.0, maxScrollExtent);
-
-    // Only animate if the target offset is significantly different to avoid unnecessary animations
     if ((targetOffset - currentScrollOffset).abs() > 1.0) {
       await _pageIndicatorScrollController.animateTo(
         targetOffset,
@@ -247,9 +221,6 @@ class _AllTasksViewState extends State<AllTasksView> {
               );
             },
           ),
-
-          // ---
-          // START: MODIFIED SECTION FOR THE INDICATOR BAR
           Positioned(
             bottom: 40,
             left: 0,

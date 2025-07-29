@@ -63,9 +63,6 @@ class _PageListItemState extends State<PageListItem> {
                 (pageDate.month > today.month ||
                     (pageDate.month == today.month &&
                         pageDate.day >= today.day))));
-    // initialPageExpanded is no longer directly used for ExpansionTile's initial state,
-    // but can be kept if you have other logic relying on it.
-    // final bool initialPageExpanded = true;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -88,14 +85,11 @@ class _PageListItemState extends State<PageListItem> {
                 ),
               ),
             ),
-            const Divider(height: 24, thickness: 1), // Separator
-            // Use Expanded here to make _buildScrollablePageContent take remaining height
+            const Divider(height: 24, thickness: 1),
             Expanded(
               child: Padding(
                 // Keep padding if desired
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                ), // Adjust padding as needed
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _buildScrollablePageContent(
                   isTodayOrFuture,
                   taskProvider,
@@ -114,10 +108,6 @@ class _PageListItemState extends State<PageListItem> {
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // You can remove ConstrainedBox here since Expanded/Flexible handles it
-        // Or keep it if you need to enforce a *maximum* height,
-        // but it will conflict with Expanded's goal of taking full available space.
-        // For "full length of parent page", you generally want to remove it.
         return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,15 +173,13 @@ class _PageListItemState extends State<PageListItem> {
                                 borderRadius: BorderRadius.circular(4.0),
                               ),
                               child: ExpansionTile(
-                                // Keep ExpansionTile for statuses if that's the desired behavior
                                 title: Text(
                                   '${status.toApiString()} (${tasksInStatus.length})',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                initiallyExpanded:
-                                    initialStatusExpanded, // Use this for initial expansion
+                                initiallyExpanded: initialStatusExpanded,
                                 children: <Widget>[
                                   Column(
                                     children: tasksInStatus.map<Widget>((task) {
