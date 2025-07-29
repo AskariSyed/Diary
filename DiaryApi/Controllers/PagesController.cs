@@ -66,7 +66,7 @@ namespace DiaryApi.Controllers
                 {
                     var tasksToCopy = await _context.PageTasks
                                                     .Where(pt => pagesFromLastDay.Contains(pt.PageId) &&
-                                                                 pt.Status.ToLower() != "completed")
+                                                                 pt.Status.ToLower() != "completed" && pt.Status.ToLower()!="deleted")
                                                     .ToListAsync();
 
                     foreach (var task in tasksToCopy)
@@ -86,7 +86,7 @@ namespace DiaryApi.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetPageById), new { id = newPage.PageId }, new { PageId = newPage.PageId, PageDate = newPage.PageDate, DiaryId = newPage.DiaryNo });
         }
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Page>> GetPageById(int id)
         {
             var page = await _context.Pages
@@ -133,5 +133,25 @@ namespace DiaryApi.Controllers
             // Map to a TaskDto if you have one for PageTask
             return Ok(tasks);
         }
+        [HttpGet("by-date")]
+        public async Task<IActionResult> GetPageByDate([FromQuery] int diaryId, [FromQuery] DateTime date)
+        {
+            var page = await _context.Pages
+                .Where(p => p.DiaryNo == diaryId && p.PageDate.Date == date.Date)
+                .FirstOrDefaultAsync();
+
+            if (page == null)
+            {
+                return NotFound($"No page found for Diary ID {diaryId} on {date:yyyy-MM-dd}.");
+            }
+
+            return Ok(new
+            {
+                page.PageId,
+                page.PageDate,
+                page.DiaryNo
+            });
+        }
+
     }
 }

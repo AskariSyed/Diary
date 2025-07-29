@@ -3,20 +3,32 @@
   "WorkspaceRootPath": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\migrations\\20250726083524_initialcreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:migrations\\20250726083524_initialcreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\controllers\\pagescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:controllers\\pagescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\controllers\\taskscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:controllers\\taskscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\diaryapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:diaryapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\migrations\\20250726083524_initialcreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:migrations\\20250726083524_initialcreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\dtos\\dto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -39,10 +51,6 @@
       "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -53,10 +61,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\models\\diary.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:models\\diary.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\diaryapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:diaryapi.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     }
   ],
   "DocumentGroupContainers": [
@@ -66,7 +70,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -74,45 +78,45 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "20250726083524_InitialCreate.cs",
-              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Migrations\\20250726083524_InitialCreate.cs",
-              "RelativeDocumentMoniker": "Migrations\\20250726083524_InitialCreate.cs",
-              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Migrations\\20250726083524_InitialCreate.cs",
-              "RelativeToolTip": "Migrations\\20250726083524_InitialCreate.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAAWAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-28T10:56:58.258Z",
+              "DocumentIndex": 2,
+              "Title": ".gitignore",
+              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\.gitignore",
+              "RelativeDocumentMoniker": ".gitignore",
+              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\.gitignore",
+              "RelativeToolTip": ".gitignore",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-07-28T15:41:30.201Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 5,
               "Title": "launchSettings.json",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Properties\\launchSettings.json",
               "RelativeDocumentMoniker": "Properties\\launchSettings.json",
               "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Properties\\launchSettings.json",
               "RelativeToolTip": "Properties\\launchSettings.json",
-              "ViewState": "AgIAAAMAAAAAAAAAAADwvykAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAiwBsAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-07-28T06:00:37.851Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-28T06:00:37.851Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "PagesController.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\PagesController.cs",
               "RelativeDocumentMoniker": "Controllers\\PagesController.cs",
               "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\PagesController.cs",
               "RelativeToolTip": "Controllers\\PagesController.cs",
-              "ViewState": "AgIAABgAAAAAAAAAAAAYwHwAAAAwAAAAAAAAAA==",
+              "ViewState": "AgIAAEYAAAAAAAAAAAAcwFgAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-26T08:27:58.967Z"
+              "WhenOpened": "2025-07-26T08:27:58.967Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 3,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
@@ -124,7 +128,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "AppDbContext.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Data\\AppDbContext.cs",
               "RelativeDocumentMoniker": "Data\\AppDbContext.cs",
@@ -136,7 +140,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 14,
               "Title": "Diary.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Models\\Diary.cs",
               "RelativeDocumentMoniker": "Models\\Diary.cs",
@@ -148,7 +152,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "DTO.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\DTOs\\DTO.cs",
               "RelativeDocumentMoniker": "DTOs\\DTO.cs",
@@ -160,19 +164,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "TasksController.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\TasksController.cs",
               "RelativeDocumentMoniker": "Controllers\\TasksController.cs",
               "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\TasksController.cs",
               "RelativeToolTip": "Controllers\\TasksController.cs",
-              "ViewState": "AgIAAD8AAAAAAAAAAAAAwEUAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAAMMAAABcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-26T08:28:10.377Z"
+              "WhenOpened": "2025-07-26T08:28:10.377Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 11,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
@@ -184,7 +189,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 10,
               "Title": "Page.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Models\\Page.cs",
               "RelativeDocumentMoniker": "Models\\Page.cs",
@@ -196,7 +201,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 8,
               "Title": "DiaryTask.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Models\\DiaryTask.cs",
               "RelativeDocumentMoniker": "Models\\DiaryTask.cs",
@@ -208,7 +213,31 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "DiaryApi.csproj",
+              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\DiaryApi.csproj",
+              "RelativeDocumentMoniker": "DiaryApi.csproj",
+              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\DiaryApi.csproj",
+              "RelativeToolTip": "DiaryApi.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-07-26T08:19:56.668Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 6,
+              "Title": "20250726083524_InitialCreate.cs",
+              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Migrations\\20250726083524_InitialCreate.cs",
+              "RelativeDocumentMoniker": "Migrations\\20250726083524_InitialCreate.cs",
+              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Migrations\\20250726083524_InitialCreate.cs",
+              "RelativeToolTip": "Migrations\\20250726083524_InitialCreate.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T10:56:58.258Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "PageTask.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Models\\PageTask.cs",
               "RelativeDocumentMoniker": "Models\\PageTask.cs",
@@ -220,7 +249,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 13,
               "Title": "DiariesController.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\DiariesController.cs",
               "RelativeDocumentMoniker": "Controllers\\DiariesController.cs",
@@ -229,18 +258,6 @@
               "ViewState": "AgIAAFQAAAAAAAAAAAAowEEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-26T08:40:43.056Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "DiaryApi.csproj",
-              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\DiaryApi.csproj",
-              "RelativeDocumentMoniker": "DiaryApi.csproj",
-              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\DiaryApi.csproj",
-              "RelativeToolTip": "DiaryApi.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAKAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-07-26T08:19:56.668Z"
             }
           ]
         }

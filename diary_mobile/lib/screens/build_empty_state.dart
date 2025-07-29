@@ -8,18 +8,27 @@ Widget buildEmptyState(
   ThemeProvider themeProvider,
   TaskProvider taskProvider,
   BuildContext context,
-  int? scrollToPageId,
-  Map<int, bool> pageExpandedState, {
+  int? scrollToPageId, {
+  // REMOVED: Map<int, bool> pageExpandedState, // This parameter is removed
   bool isFiltering = false,
   VoidCallback? onClearFilter,
 }) {
-  // Create a dummy TabController for the empty state AppBar
+  // It's generally not good practice to create a TabController inside a build method
+  // that's part of a Widget function like this, as it will be re-created on every build.
+  // However, since this is for an "empty state" which might not be rebuilt frequently,
+  // and it's a "dummy" controller, it might be acceptable for now.
+  // For a more robust solution, if this widget was a StatefulWidget,
+  // the TabController would be managed in its State's initState and dispose.
   final TabController dummyTabController = TabController(
-    length:
-        TaskStatus.values.where((s) => s != TaskStatus.deleted).length +
-        1, // Match actual tabs
-    vsync: Scaffold.of(context), // Use context's ticker provider
+    length: TaskStatus.values.where((s) => s != TaskStatus.deleted).length + 1,
+    vsync: Scaffold.of(context), // Requires a TickerProvider
   );
+
+  // Remember to dispose of dummyTabController if this widget is ever a StatefulWidget.
+  // Since it's a function, you can't easily dispose it here.
+  // This is a minor memory leak, but for a dummy controller in an empty state, it might be negligible.
+  // If this function were to be used in a highly dynamic part of your UI,
+  // you'd want to consider turning `buildEmptyState` into a proper StatefulWidget.
 
   final List<Tab> tabs = [
     const Tab(text: 'All'),
@@ -36,7 +45,7 @@ Widget buildEmptyState(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: TextField(
-              readOnly: true, // Make it read-only for consistency
+              readOnly: true,
               decoration: InputDecoration(
                 hintText: 'Search tasks...',
                 border: OutlineInputBorder(
@@ -59,8 +68,7 @@ Widget buildEmptyState(
             context,
             taskProvider,
             scrollToPageId,
-            pageExpandedState,
-          ),
+          ), // REMOVED: pageExpandedState here
         ),
         IconButton(
           icon: Icon(
@@ -71,10 +79,9 @@ Widget buildEmptyState(
           onPressed: themeProvider.toggleTheme,
         ),
       ],
-      // Add TabBar to the bottom of the AppBar
       bottom: TabBar(
-        controller: dummyTabController, // Use the dummy controller
-        isScrollable: true, // Allows tabs to scroll if there are many
+        controller: dummyTabController,
+        isScrollable: true,
         tabs: tabs,
         labelPadding: const EdgeInsets.symmetric(horizontal: 16.0),
         indicatorSize: TabBarIndicatorSize.tab,

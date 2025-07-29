@@ -162,6 +162,27 @@
   },
   {
     "ContainingType": "DiaryApi.Controllers.PagesController",
+    "Method": "GetPageByDate",
+    "RelativePath": "api/Pages/by-date",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "diaryId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "date",
+        "Type": "System.DateTime",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiaryApi.Controllers.PagesController",
     "Method": "GetPagesByDiary",
     "RelativePath": "api/Pages/by-diary/{diaryId}",
     "HttpMethod": "GET",

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '/models/task_dto.dart';
 import '/mixin/taskstatus.dart';
 import '/models/create_page_dto.dart';
@@ -344,6 +345,40 @@ class TaskProvider with ChangeNotifier {
     } catch (e) {
       print('Error fetching task history by pageTaskId: $e');
       rethrow;
+    }
+  }
+
+  Future<int?> getPagebyDate(int diaryId, DateTime date) async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    final url = Uri.parse(
+      '$_pagesBaseUrl/by-date?diaryId=$diaryId&date=$formattedDate',
+    );
+
+    print('Requesting page by date with URL: $url');
+
+    try {
+      final response = await http.get(url);
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        print('Parsed pageId from response: ${jsonData['pageId']}');
+        return jsonData['pageId'] as int;
+      } else if (response.statusCode == 404) {
+        print('No page found for Diary ID $diaryId on $formattedDate.');
+        return null;
+      } else {
+        final errorMsg = 'Failed to fetch page: Status ${response.statusCode}';
+        print(errorMsg);
+        _setErrorMessage(errorMsg);
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching page by date: $e');
+      _setErrorMessage('Network error while fetching page for $formattedDate');
+      return null;
     }
   }
 }

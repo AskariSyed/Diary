@@ -11,52 +11,76 @@ Widget buildTaskCard(
   bool isDraggableAndEditable,
   BuildContext context,
 ) {
-  return Card(
+  Widget cardContent = Card(
     margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListTile(
-          title: Text(
-            task.title,
-            style: TextStyle(
-              decoration: task.status == TaskStatus.complete
-                  ? TextDecoration.lineThrough
-                  : null,
-            ),
-          ),
-          subtitle: Text(
-            task.parentTaskCreatedAt != null
-                ? 'Created At: ${task.parentTaskCreatedAt!.toLocal().toString().split('.').first}'
-                : 'Created At: Unknown',
-            style: const TextStyle(color: Colors.grey),
-          ),
-
-          trailing: IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () => _confirmDeleteTask(context, taskProvider, task),
-          ),
-          onTap: () => showEditTaskDialog(context, taskProvider, task),
+    child: ListTile(
+      title: Text(
+        task.title,
+        style: TextStyle(
+          decoration: task.status == TaskStatus.complete
+              ? TextDecoration.lineThrough
+              : null,
         ),
-        Padding(
-          padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
-          child: ElevatedButton.icon(
+      ),
+      subtitle: Text(
+        task.parentTaskCreatedAt != null
+            ? 'Created At: ${task.parentTaskCreatedAt!.toLocal().toString().split('.').first}'
+            : 'Created At: Unknown',
+        style: const TextStyle(color: Colors.grey),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.blueGrey),
+            tooltip: 'View Report',
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (_) => TaskHistoryDialog(taskId: task.id),
               );
             },
-            icon: const Icon(Icons.history),
-            label: const Text('Report'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueGrey,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            tooltip: 'Delete Task',
+            onPressed: () => _confirmDeleteTask(context, taskProvider, task),
+          ),
+        ],
+      ),
+      onTap: () => showEditTaskDialog(context, taskProvider, task),
+    ),
+  );
+
+  if (!isDraggableAndEditable) {
+    return cardContent;
+  }
+
+  return LongPressDraggable<TaskDto>(
+    data: task,
+    feedback: Material(
+      elevation: 8.0,
+      shadowColor: Colors.black.withOpacity(0.6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      child: Container(
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12.0),
+          border: Border.all(color: Theme.of(context).primaryColor, width: 2.0),
+        ),
+        child: Text(
+          task.title,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            fontSize: 16.0,
+            fontWeight: FontWeight.bold,
           ),
         ),
-      ],
+      ),
     ),
+    childWhenDragging: Opacity(opacity: 0.5, child: cardContent),
+    child: cardContent,
   );
 }
 

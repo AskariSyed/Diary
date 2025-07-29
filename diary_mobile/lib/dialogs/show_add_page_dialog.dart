@@ -8,7 +8,7 @@ void showAddPageDialog(
   BuildContext context,
   TaskProvider taskProvider,
   int? scrollToPageId,
-  Map<int, bool> pageExpandedState,
+  // REMOVED: Map<int, bool> pageExpandedState, // This parameter is removed
 ) {
   DateTime? selectedPageDate = DateTime.now();
   bool hasError = false;
@@ -85,6 +85,7 @@ void showAddPageDialog(
                   taskProvider.clearErrorMessage();
 
                   try {
+                    // This line is fine, it just gets the ID, doesn't depend on state.
                     final int? oldMostRecentPageId = taskProvider
                         .getCurrentMostRecentPageId();
 
@@ -96,10 +97,17 @@ void showAddPageDialog(
                     if (newPageId != -1) {
                       Navigator.pop(context);
                       setStateSB(() {
-                        scrollToPageId = newPageId;
-                        if (oldMostRecentPageId != null) {
-                          pageExpandedState[oldMostRecentPageId] = false;
-                        }
+                        // The `scrollToPageId = newPageId;` line only updates a local variable
+                        // within the dialog's scope, which is fine.
+                        // It doesn't directly affect the TaskBoardScreen's _pageToScrollTo
+                        // unless you pass it back via Navigator.pop's result or a callback.
+                        // If TaskBoardScreen relies on this to scroll after the dialog closes,
+                        // you'll need to adjust how TaskBoardScreen consumes this.
+                        scrollToPageId =
+                            newPageId; // Still fine for local usage
+                        // REMOVED: if (oldMostRecentPageId != null) {
+                        // REMOVED:   pageExpandedState[oldMostRecentPageId] = false;
+                        // REMOVED: } // This block is removed
                       });
                       Future.microtask(() {
                         ScaffoldMessenger.of(context).showSnackBar(

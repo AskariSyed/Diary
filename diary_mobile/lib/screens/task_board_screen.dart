@@ -1,19 +1,20 @@
 // lib/screens/task_board_screen.dart
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
-import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
+import 'package:diary_mobile/dialogs/show_add_task_dialog.dart'; // Corrected import
 import 'package:diary_mobile/screens/build_empty_state.dart';
 import 'package:diary_mobile/screens/build_error_state.dart';
 import 'package:diary_mobile/screens/build_loading_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/models/task_dto.dart';
-import '/mixin/taskstatus.dart';
+import '/mixin/taskstatus.dart'; // This import now brings in ExpansibleController
 import '/providers/task_provider.dart';
 import '/providers/theme_provider.dart';
 import 'package:intl/intl.dart';
 
 // Import the new tab view files
-import 'package:diary_mobile/screens/tabs/all_tasks_view.dart';
+import 'package:diary_mobile/screens/tabs/all_tasks_view.dart'
+    hide ExpansibleController;
 import 'package:diary_mobile/screens/tabs/status_tasks_view.dart';
 
 class TaskBoardScreen extends StatefulWidget {
@@ -25,13 +26,11 @@ class TaskBoardScreen extends StatefulWidget {
 
 class _TaskBoardScreenState extends State<TaskBoardScreen>
     with SingleTickerProviderStateMixin {
-  // We'll still use these maps to track intended expansion states for UI consistency
-  // but the actual expansion will be driven by ExpansionTileControllers.
   final Map<String, bool> _statusExpandedState = {};
-  final Map<int, bool> _pageExpandedState = {};
+  // REMOVED: _pageExpandedState is no longer needed
 
-  // --- NEW: Map to hold ExpansionTileControllers ---
-  final Map<String, ExpansionTileController> _expansionTileControllers = {};
+  // UPDATED: Now _expansionTileControllers only manages status controllers
+  final Map<String, ExpansibleController> _expansionTileControllers = {};
 
   final ScrollController _scrollController = ScrollController();
   String? _fetchErrorMessage;
@@ -44,9 +43,12 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   DateTime? _selectedDate;
   List<TaskDto> _filteredTasks = [];
   bool _isFiltering = false;
-  bool _isScrollingFromSearch = false; // New flag
+  bool _isScrollingFromSearch = false;
+  bool _isDraggingTask = false; // New state variable for global drag status
 
   late TabController _tabController;
+  int?
+  _initialPageIndexForPageView; // New: To set initial page for AllTasksView
 
   @override
   void initState() {
@@ -67,8 +69,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       if (!_tabController.indexIsChanging) {
         if (_tabController.index == 0) {
           setState(() {
-            // Trigger scroll on tab change to 'All Tasks' if there's a pending scroll target
-            // This is crucial if a search result was clicked and the user was on another tab
+            // Only trigger scroll for AllTasksView if a specific page is targeted (e.g., from search)
             if (_pageToScrollTo != null) {
               _scrollTrigger++;
             }
@@ -77,35 +78,26 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
           setState(() {
             _pageToScrollTo = null;
             _statusToExpand = null;
-            // Clear expansion states when switching tabs (optional, but good for clean UI)
-            _pageExpandedState.clear();
+            // REMOVED: _pageExpandedState.clear();
             _statusExpandedState.clear();
-            _isScrollingFromSearch = false; // Reset flag on tab switch
-            // Close all expansion tiles when switching tabs
-            _expansionTileControllers.values.forEach((controller) {
+            _isScrollingFromSearch = false;
+            // Collapse all expansion tiles when switching tabs
+            for (var controller in _expansionTileControllers.values) {
               if (controller.isExpanded) {
                 controller.collapse();
               }
-            });
-            // It's generally better not to clear the controllers themselves here,
-            // but rather manage their expansion state. If they are cleared,
-            // they would need to be re-created by the child widgets on subsequent visits.
-            // For now, let's keep them and just collapse.
+            }
           });
         }
       }
     });
   }
 
-  // --- NEW: Method to get or create ExpansionTileController ---
-  // This method is primarily for TaskBoardScreen itself if it were to manage
-  // controllers for top-level ExpansionTiles. For child widgets, they will use
-  // the map passed down. This specific method might not be directly used here,
-  // but it indicates the intent of managing controllers in a map.
-  ExpansionTileController _getOrCreateExpansionTileController(String key) {
+  // UPDATED: This controller is now explicitly for Status ExpansionTiles
+  ExpansibleController _getOrCreateExpansionTileController(String key) {
     return _expansionTileControllers.putIfAbsent(
       key,
-      () => ExpansionTileController(),
+      () => ExpansibleController(),
     );
   }
 
@@ -150,14 +142,13 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         _pageToScrollTo = null;
         _statusToExpand = null;
       }
-      _pageExpandedState.clear();
+      // REMOVED: _pageExpandedState.clear();
       _statusExpandedState.clear();
-      // Optionally collapse all tiles when search is cleared, if they are open.
-      _expansionTileControllers.values.forEach((controller) {
+      for (var controller in _expansionTileControllers.values) {
         if (controller.isExpanded) {
           controller.collapse();
         }
-      });
+      }
     });
   }
 
@@ -167,6 +158,66 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       setState(() {
         _fetchErrorMessage = null;
         print('Tasks fetched successfully');
+
+        // Logic to determine initial page to display (no scroll animation)
+        final List<TaskDto> allTasks = Provider.of<TaskProvider>(
+          context,
+          listen: false,
+        ).tasks;
+        final Map<int, List<TaskDto>> tasksByPageTemp = {};
+        for (var task in allTasks) {
+          tasksByPageTemp.putIfAbsent(task.pageId, () => []).add(task);
+        }
+
+        int? initialDisplayPageId;
+        final DateTime now = DateTime.now();
+        final DateTime today = DateTime(now.year, now.month, now.day);
+
+        for (final pageId in tasksByPageTemp.keys) {
+          final pageDate = tasksByPageTemp[pageId]?.first.pageDate;
+          if (pageDate != null &&
+              DateTime(pageDate.year, pageDate.month, pageDate.day) == today) {
+            initialDisplayPageId = pageId;
+            break;
+          }
+        }
+
+        if (initialDisplayPageId == null && tasksByPageTemp.isNotEmpty) {
+          DateTime? mostRecentDate;
+          int? mostRecentPage;
+          tasksByPageTemp.forEach((pageId, tasks) {
+            final pageDate = tasks.first.pageDate;
+            if (pageDate != null) {
+              if (mostRecentDate == null || pageDate.isAfter(mostRecentDate!)) {
+                mostRecentDate = pageDate;
+                mostRecentPage = pageId;
+              }
+            }
+          });
+          initialDisplayPageId = mostRecentPage;
+        }
+
+        // Set the initial page index for PageView.builder
+        if (initialDisplayPageId != null) {
+          final List<int> currentSortedPageIds = tasksByPageTemp.keys.toList()
+            ..sort((a, b) {
+              final DateTime? dateA = tasksByPageTemp[a]?.first.pageDate;
+              final DateTime? dateB = tasksByPageTemp[b]?.first.pageDate;
+              if (dateA == null && dateB == null) return 0;
+              if (dateA == null) return -1;
+              if (dateB == null) return 1;
+              return dateA.compareTo(dateB);
+            });
+          _initialPageIndexForPageView = currentSortedPageIds.indexOf(
+            initialDisplayPageId,
+          );
+          if (_initialPageIndexForPageView == -1) {
+            _initialPageIndexForPageView =
+                0; // Fallback to first page if not found
+          }
+        } else {
+          _initialPageIndexForPageView = 0; // Default to first page if no tasks
+        }
       });
     } catch (e) {
       print('Error fetching tasks from _fetchTaskswithError Handling: $e');
@@ -182,9 +233,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     final String keyString = '$viewPrefix-$pageId';
     final GlobalKey key = _globalKeys.putIfAbsent(
       keyString,
-      () => GlobalObjectKey(
-        keyString,
-      ), // Ensures a unique key instance per pageId
+      () => GlobalObjectKey(keyString),
     );
     print(
       'TaskBoardScreen: _getPageGlobalKey called for $keyString. Key instance: $key',
@@ -197,20 +246,18 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       'TaskBoardScreen: _scrollToPageAndStatus called with pageId: $pageId, status: $status',
     );
     setState(() {
-      _isScrollingFromSearch = true; // Set the flag
+      _isScrollingFromSearch = true;
       _pageToScrollTo = pageId;
       _statusToExpand = status;
-      _isFiltering = false; // Hide the search results overlay
-      _searchController.clear(); // Clear search text to remove overlay
+      _isFiltering = false;
+      _searchController.clear();
 
-      // Increment scrollTrigger to ensure AllTasksView rebuilds and checks for scroll
       _scrollTrigger++;
       print(
         'TaskBoardScreen: After setState in _scrollToPageAndStatus: _pageToScrollTo = $_pageToScrollTo, _scrollTrigger = $_scrollTrigger',
       );
     });
 
-    // If we are not already on the "All Tasks" tab (index 0), switch to it.
     if (_tabController.index != 0) {
       print('TaskBoardScreen: Switching to All Tasks tab.');
       if (mounted) {
@@ -229,40 +276,38 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     );
 
     setState(() {
-      // Clear all expansion states before expanding the target
-      _pageExpandedState.clear();
       _statusExpandedState.clear();
-
-      // Set the intended expanded state for the target page and status
-      _pageExpandedState[pageId] = true;
       _statusExpandedState['status_${pageId}_${status.index}'] = true;
     });
 
-    // Explicitly expand the page ExpansionTile
-    final String pageKey = 'page_$pageId';
-    final ExpansionTileController? pageController =
-        _expansionTileControllers[pageKey];
-    if (pageController != null && !pageController.isExpanded) {
-      print('TaskBoardScreen: Expanding page tile for key: $pageKey');
-      pageController.expand();
-    }
-
-    // Explicitly expand the status ExpansionTile within that page
     final String statusKey = 'status_${pageId}_${status.index}';
-    final ExpansionTileController? statusController =
+    final ExpansibleController? statusController =
         _expansionTileControllers[statusKey];
     if (statusController != null && !statusController.isExpanded) {
       print('TaskBoardScreen: Expanding status tile for key: $statusKey');
-      statusController.expand();
+      Future.microtask(() {
+        if (mounted) statusController.expand();
+      });
     }
 
-    // Ensure _pageToScrollTo and _statusToExpand are nullified after successful scroll and expand
-    // This is important to prevent re-triggering the scroll/expansion on subsequent rebuilds.
     setState(() {
       _pageToScrollTo = null;
       _statusToExpand = null;
-      _isScrollingFromSearch =
-          false; // Reset the flag once expansion is triggered
+      _isScrollingFromSearch = false;
+    });
+  }
+
+  // New methods to handle global drag state
+  void _handleDragStarted() {
+    setState(() {
+      _isDraggingTask = true;
+    });
+  }
+
+  // Corrected signature: removed DragEndDetails parameter
+  void _handleDragEnded() {
+    setState(() {
+      _isDraggingTask = false;
     });
   }
 
@@ -277,16 +322,15 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _tabController.dispose();
-    // Dispose of all ExpansionTileControllers when the screen is disposed
-    _expansionTileControllers.values.forEach(
-      (controller) => controller.dispose(),
-    );
+    for (var controller in _expansionTileControllers.values) {
+      controller.dispose();
+    }
     _expansionTileControllers.clear();
     super.dispose();
   }
 
   Color _getStatusColor(TaskStatus status, Brightness brightness) {
-    final Map<TaskStatus, Color> baseColors = {
+    final baseColors = {
       TaskStatus.backlog: Colors.blueGrey,
       TaskStatus.toDiscuss: Colors.amber,
       TaskStatus.inProgress: Colors.deepPurple,
@@ -295,11 +339,32 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       TaskStatus.toFollowUp: Colors.teal,
     };
 
-    Color baseColor = baseColors[status] ?? Colors.grey;
-    if (brightness == Brightness.dark) {
-      return baseColor.withOpacity(0.2);
-    } else {
-      return baseColor;
+    final baseColor = baseColors[status] ?? Colors.grey;
+
+    // Return the base color directly for both light and dark themes
+    return baseColor;
+  }
+
+  // Helper method to get an icon for each status
+  IconData _getStatusIcon(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.backlog:
+        return Icons.assignment;
+      case TaskStatus.toDiscuss:
+        return Icons.chat;
+      case TaskStatus.inProgress:
+        return Icons.work;
+      case TaskStatus.onHold:
+        return Icons.pause_circle_filled;
+      case TaskStatus.complete:
+        return Icons.check_circle;
+      case TaskStatus.toFollowUp:
+        return Icons.follow_the_signs;
+      case TaskStatus
+          .deleted: // Should not be a drop target, but for completeness
+        return Icons.delete;
+      default:
+        return Icons.help_outline;
     }
   }
 
@@ -318,14 +383,21 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       tasksByPage.putIfAbsent(task.pageId, () => []).add(task);
     }
     final List<int> sortedPageIds = tasksByPage.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
+      ..sort((a, b) {
+        final DateTime? dateA = tasksByPage[a]?.first.pageDate;
+        final DateTime? dateB = tasksByPage[b]?.first.pageDate;
+
+        if (dateA == null && dateB == null) return 0;
+        if (dateA == null) return -1;
+        if (dateB == null) return 1;
+        return dateA.compareTo(dateB);
+      });
 
     if (taskProvider.errorMessage != null) {
       return ErrorStateScreen(
         themeProvider: themeProvider,
         taskProvider: taskProvider,
         scrollToPageId: _pageToScrollTo,
-        pageExpandedState: _pageExpandedState,
         fetchErrorMessage: _fetchErrorMessage,
       );
     }
@@ -336,7 +408,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         themeProvider,
         taskProvider,
         _pageToScrollTo,
-        _pageExpandedState,
       );
     }
     if (sortedPageIds.isEmpty && !_isFiltering) {
@@ -345,15 +416,50 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         taskProvider,
         context,
         _pageToScrollTo,
-        _pageExpandedState,
       );
     }
 
     final List<Tab> tabs = [
-      const Tab(text: 'All Tasks'),
+      Tab(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.all_inclusive,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ), // Icon for "All Tasks"
+            Text(
+              'All Tasks',
+              style: TextStyle(fontSize: 9), // Smaller text for tabs
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
       ...TaskStatus.values
           .where((status) => status != TaskStatus.deleted)
-          .map((status) => Tab(text: status.toApiString())),
+          .map(
+            (status) => Tab(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _getStatusIcon(status),
+                    size: 18,
+                    color: _getStatusColor(status, currentBrightness),
+                  ), // Use icon with status color
+                  Text(
+                    status.toApiString(),
+                    style: const TextStyle(
+                      fontSize: 9,
+                    ), // Smaller text for tabs
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
     ];
 
     final List<Widget> tabViews = [
@@ -363,13 +469,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         tasksByPage: tasksByPage,
         sortedPageIds: sortedPageIds,
         getPageGlobalKey: _getPageGlobalKey,
-        pageExpandedState: _pageExpandedState,
         statusExpandedState: _statusExpandedState,
         currentBrightness: currentBrightness,
         formatDate: _formatDate,
         getStatusColor: _getStatusColor,
         scrollToPageAndStatus: _scrollToPageAndStatus,
-        scrollController: _scrollController,
         pageToScrollTo: _pageToScrollTo,
         statusToExpand: _statusToExpand,
         onScrollComplete: () {
@@ -390,7 +494,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               tasksByPage: tasksByPage,
               sortedPageIds: sortedPageIds,
               getPageGlobalKey: _getPageGlobalKey,
-              pageExpandedState: _pageExpandedState,
               statusExpandedState: _statusExpandedState,
               currentBrightness: currentBrightness,
               formatDate: _formatDate,
@@ -407,8 +510,9 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   _isScrollingFromSearch = false;
                 });
               },
-              // --- ADDED: Pass the expansionTileControllers map ---
               expansionTileControllers: _expansionTileControllers,
+              onDragStarted: _handleDragStarted, // Pass callback
+              onDragEnded: _handleDragEnded, // Pass callback
             ),
           ),
     ];
@@ -429,7 +533,8 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
             ).colorScheme.onSurfaceVariant,
           ),
           actions: [
-            Expanded(
+            SizedBox(
+              width: 250, // Adjust this width as needed
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: TextField(
@@ -458,12 +563,8 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
             IconButton(
               icon: const Icon(Icons.note_add),
               tooltip: 'Add New Page',
-              onPressed: () => showAddPageDialog(
-                context,
-                taskProvider,
-                _pageToScrollTo,
-                _pageExpandedState,
-              ),
+              onPressed: () =>
+                  showAddPageDialog(context, taskProvider, _pageToScrollTo),
             ),
             IconButton(
               icon: Icon(
@@ -477,7 +578,52 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         ),
         body: Stack(
           children: [
-            TabBarView(controller: _tabController, children: tabViews),
+            TabBarView(
+              controller: _tabController,
+              // Add this line to enable swiping
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: tabViews,
+            ),
+
+            // Floating Action Button - now inside the Stack
+            Positioned(
+              right: 16.0,
+              bottom: 16.0,
+              child: FloatingActionButton.extended(
+                onPressed: () async {
+                  if (!mounted) return;
+                  showAddTaskDialog(context);
+                },
+                label: const Text('Add New Task'),
+                icon: const Icon(Icons.add),
+              ),
+            ),
+
+            // Global drop targets (cans) visible when dragging - positioned above FAB
+            if (_isDraggingTask)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  color: Theme.of(context).cardColor.withOpacity(0.9),
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: TaskStatus.values
+                        .where((status) => status != TaskStatus.deleted)
+                        .map(
+                          (status) => _buildStatusDropTarget(
+                            context,
+                            status,
+                            taskProvider,
+                            currentBrightness,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
 
             if (_isFiltering && _filteredTasks.isNotEmpty)
               Positioned(
@@ -556,19 +702,91 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               ),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () async {
-            final int targetPageId = await taskProvider
-                .getTargetPageIdForNewTask();
-
-            if (!mounted) return;
-
-            showAddTaskDialog(context, targetPageId);
-          },
-          label: const Text('Add New Task'),
-          icon: const Icon(Icons.add),
-        ),
       ),
+    );
+  }
+
+  // Helper method to build a single status drop target "can"
+  Widget _buildStatusDropTarget(
+    BuildContext context,
+    TaskStatus status,
+    TaskProvider taskProvider,
+    Brightness currentBrightness,
+  ) {
+    return DragTarget<TaskDto>(
+      onWillAcceptWithDetails: (data) {
+        // Only accept if the task's current status is different from this target status
+        return data.data.status != status;
+      },
+      onAcceptWithDetails: (details) async {
+        final draggedTask = details.data;
+        try {
+          await taskProvider.updateTaskStatus(draggedTask.id, status);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Task "${draggedTask.title}" moved to ${status.toApiString()}',
+              ),
+            ),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update task status: $e')),
+          );
+        }
+      },
+      builder: (context, candidateData, rejectedData) {
+        final bool isHovering = candidateData.isNotEmpty;
+        return Container(
+          width: 60,
+          height: 80,
+          decoration: BoxDecoration(
+            color: isHovering
+                ? _getStatusColor(status, currentBrightness).withOpacity(0.7)
+                : _getStatusColor(status, currentBrightness).withOpacity(0.4),
+            borderRadius: BorderRadius.circular(
+              15.0,
+            ), // Rounded corners for can look
+            border: Border.all(
+              color: isHovering
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.transparent,
+              width: 2.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 1,
+                blurRadius: 3,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _getStatusIcon(status), // Helper for status icons
+                color: isHovering
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onSurface,
+                size: 24, // Keep icon size at 24 for better fit
+              ),
+              Text(
+                status.toApiString(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isHovering
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                  fontSize: 10, // Keep font size at 10 for better fit
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

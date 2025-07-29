@@ -8,7 +8,7 @@ class ErrorStateScreen extends StatefulWidget {
   final ThemeProvider themeProvider;
   final TaskProvider taskProvider;
   final int? scrollToPageId;
-  final Map<int, bool> pageExpandedState;
+  // REMOVED: final Map<int, bool> pageExpandedState; // This line is removed
   final String? fetchErrorMessage;
 
   const ErrorStateScreen({
@@ -16,7 +16,7 @@ class ErrorStateScreen extends StatefulWidget {
     required this.themeProvider,
     required this.taskProvider,
     required this.scrollToPageId,
-    required this.pageExpandedState,
+    // REMOVED: required this.pageExpandedState, // This line is removed
     required this.fetchErrorMessage,
   });
 
@@ -26,15 +26,13 @@ class ErrorStateScreen extends StatefulWidget {
 
 class _ErrorStateScreenState extends State<ErrorStateScreen>
     with SingleTickerProviderStateMixin {
-  // Add SingleTickerProviderStateMixin here
   String? _localFetchError;
-  late TabController _dummyTabController; // Declare dummy controller
+  late TabController _dummyTabController;
 
   @override
   void initState() {
     super.initState();
     _localFetchError = widget.fetchErrorMessage;
-    // Initialize dummy TabController
     _dummyTabController = TabController(
       length:
           TaskStatus.values.where((s) => s != TaskStatus.deleted).length + 1,
@@ -105,7 +103,7 @@ class _ErrorStateScreenState extends State<ErrorStateScreen>
               context,
               widget.taskProvider,
               widget.scrollToPageId,
-              widget.pageExpandedState,
+              // REMOVED: widget.pageExpandedState, // This line is removed
             ),
           ),
           IconButton(
@@ -117,9 +115,8 @@ class _ErrorStateScreenState extends State<ErrorStateScreen>
             onPressed: widget.themeProvider.toggleTheme,
           ),
         ],
-        // Add TabBar to the bottom of the AppBar
         bottom: TabBar(
-          controller: _dummyTabController, // Use the dummy controller
+          controller: _dummyTabController,
           isScrollable: true,
           tabs: tabs,
           labelPadding: const EdgeInsets.symmetric(horizontal: 16.0),
