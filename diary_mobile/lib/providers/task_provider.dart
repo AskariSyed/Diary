@@ -12,8 +12,8 @@ class TaskProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  final String _tasksBaseUrl = 'http://192.168.137.1:5158/api/Tasks';
-  final String _pagesBaseUrl = 'http://192.168.137.1:5158/api/Pages';
+  final String _tasksBaseUrl = 'https://430e9003f511.ngrok-free.app/api/Tasks';
+  final String _pagesBaseUrl = 'https://430e9003f511.ngrok-free.app/api/Pages';
 
   List<TaskDto> get tasks => _tasks;
   bool get isLoading => _isLoading;
