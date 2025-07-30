@@ -3,6 +3,7 @@ import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/widgets/page_list_item.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' as M;
 
 abstract class ExpansibleController extends ChangeNotifier {
   bool get isExpanded;
@@ -237,36 +238,94 @@ class _AllTasksViewState extends State<AllTasksView> {
     return Scaffold(
       body: Stack(
         children: [
-          PageView.builder(
+          // PageView.builder(
+          //   controller: _pageController,
+          //   itemCount: widget.sortedPageIds.length,
+          //   scrollDirection: Axis.horizontal,
+          //   itemBuilder: (context, index) {
+          //     final int pageId = widget.sortedPageIds[index];
+          //     final List<TaskDto> currentPageTasks =
+          //         widget.tasksByPage[pageId]!;
+          //     final bool isMostRecentPage = pageId == mostRecentPageId;
+
+          //     return Padding(
+          //       padding: EdgeInsets.only(
+          //         left: 12.0,
+          //         right: 12.0,
+          //         top: 12.0,
+          //         bottom: 10,
+          //       ),
+          //       child: PageListItem(
+          //         key: widget.getPageGlobalKey('all_tasks', pageId),
+          //         pageId: pageId,
+          //         formatDate: widget.formatDate,
+          //         currentPageTasks: currentPageTasks,
+          //         isMostRecentPage: isMostRecentPage,
+          //         getStatusColor: widget.getStatusColor,
+          //         statusExpandedState: widget.statusExpandedState,
+          //         currentBrightness: widget.currentBrightness,
+          //         statusToExpand: widget.statusToExpand,
+          //       ),
+          //     );
+          //   },
+          // ),
+          PageView.custom(
             controller: _pageController,
-            itemCount: widget.sortedPageIds.length,
             scrollDirection: Axis.horizontal,
-            itemBuilder: (context, index) {
+            childrenDelegate: SliverChildBuilderDelegate((context, index) {
               final int pageId = widget.sortedPageIds[index];
               final List<TaskDto> currentPageTasks =
                   widget.tasksByPage[pageId]!;
               final bool isMostRecentPage = pageId == mostRecentPageId;
 
-              return Padding(
-                padding: EdgeInsets.only(
-                  left: 12.0,
-                  right: 12.0,
-                  top: 12.0,
-                  bottom: 10,
-                ),
-                child: PageListItem(
-                  key: widget.getPageGlobalKey('all_tasks', pageId),
-                  pageId: pageId,
-                  formatDate: widget.formatDate,
-                  currentPageTasks: currentPageTasks,
-                  isMostRecentPage: isMostRecentPage,
-                  getStatusColor: widget.getStatusColor,
-                  statusExpandedState: widget.statusExpandedState,
-                  currentBrightness: widget.currentBrightness,
-                  statusToExpand: widget.statusToExpand,
-                ),
+              return AnimatedBuilder(
+                animation: _pageController,
+                builder: (context, child) {
+                  double rotationY = 0.2;
+                  double scale = 1.0;
+                  double opacity = 1.0;
+
+                  if (_pageController.position.haveDimensions) {
+                    double pageOffset = _pageController.page! - index;
+                    double clampedOffset = pageOffset.clamp(-1.0, 0.5);
+
+                    rotationY = clampedOffset * (M.pi / 1);
+                    scale = (1 - (clampedOffset.abs() * 0.1)).clamp(0.9, 1.0);
+                    opacity = (1 - clampedOffset.abs() * 0.3).clamp(0.1, 1.0);
+                  }
+
+                  final transform = Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.0015)
+                      ..rotateY(rotationY)
+                      ..scale(scale),
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 10.0,
+                        ),
+                        child: PageListItem(
+                          key: widget.getPageGlobalKey('all_tasks', pageId),
+                          pageId: pageId,
+                          formatDate: widget.formatDate,
+                          currentPageTasks: currentPageTasks,
+                          isMostRecentPage: isMostRecentPage,
+                          getStatusColor: widget.getStatusColor,
+                          statusExpandedState: widget.statusExpandedState,
+                          currentBrightness: widget.currentBrightness,
+                          statusToExpand: widget.statusToExpand,
+                        ),
+                      ),
+                    ),
+                  );
+
+                  return transform;
+                },
               );
-            },
+            }, childCount: widget.sortedPageIds.length),
           ),
 
           Positioned(
@@ -282,6 +341,7 @@ class _AllTasksViewState extends State<AllTasksView> {
                   child: ListView.builder(
                     controller: _pageIndicatorScrollController,
                     scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     itemCount: widget.sortedPageIds.length,
                     itemBuilder: (context, index) {
                       bool isSelected = _currentPageIndex == index;
