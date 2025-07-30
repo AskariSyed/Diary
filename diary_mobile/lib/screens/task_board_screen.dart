@@ -1,13 +1,14 @@
 // lib/screens/task_board_screen.dart
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
-import 'package:diary_mobile/dialogs/show_add_task_dialog.dart'; // Corrected import
+import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/screens/build_empty_state.dart';
 import 'package:diary_mobile/screens/build_error_state.dart';
 import 'package:diary_mobile/screens/build_loading_screen.dart';
+import 'package:diary_mobile/widgets/status_dropTarget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/models/task_dto.dart';
-import '/mixin/taskstatus.dart'; // This import now brings in ExpansibleController
+import '/mixin/taskstatus.dart';
 import '/providers/task_provider.dart';
 import '/providers/theme_provider.dart';
 import 'package:intl/intl.dart';
@@ -27,11 +28,7 @@ class TaskBoardScreen extends StatefulWidget {
 class _TaskBoardScreenState extends State<TaskBoardScreen>
     with SingleTickerProviderStateMixin {
   final Map<String, bool> _statusExpandedState = {};
-  // REMOVED: _pageExpandedState is no longer needed
-
-  // UPDATED: Now _expansionTileControllers only manages status controllers
   final Map<String, ExpansibleController> _expansionTileControllers = {};
-
   final ScrollController _scrollController = ScrollController();
   String? _fetchErrorMessage;
   int _scrollTrigger = 0;
@@ -44,12 +41,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   List<TaskDto> _filteredTasks = [];
   bool _isFiltering = false;
   bool _isScrollingFromSearch = false;
-  bool _isDraggingTask = false; // New state variable for global drag status
-  bool _isSearching = false; // New state for interactive search bar
+  bool _isDraggingTask = false;
+  bool _isSearching = false;
 
   late TabController _tabController;
-  int?
-  _initialPageIndexForPageView; // New: To set initial page for AllTasksView
+  int? _initialPageIndexForPageView;
 
   @override
   void initState() {
@@ -92,13 +88,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     });
   }
 
-  ExpansibleController _getOrCreateExpansionTileController(String key) {
-    return _expansionTileControllers.putIfAbsent(
-      key,
-      () => ExpansibleController(),
-    );
-  }
-
   String _formatDate(DateTime? date) {
     if (date == null) return 'Unknown Date';
     return DateFormat('MMMM dd, yyyy').format(date);
@@ -106,13 +95,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
 
   void _onSearchChanged() {
     if (_searchController.text.isEmpty) {
-      // Don't call _clearSearch here directly to avoid recursion.
-      // Instead, just update the state. The user can explicitly clear.
       _searchTasks();
     } else {
       _searchTasks();
     }
-    // We need to call setState to rebuild the AppBar with the clear icon
     setState(() {});
   }
 
@@ -149,9 +135,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     });
   }
 
-  // MODIFIED: Patched to prevent recursion from listener.
   void _clearSearch() {
-    // Temporarily remove listener to prevent recursion when we clear the controller
     _searchController.removeListener(_onSearchChanged);
     _searchController.clear();
     _searchController.addListener(_onSearchChanged);
@@ -186,7 +170,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         _selectedDate = picked;
         _searchController.text = _formatDate(picked);
       });
-      // The listener on _searchController will automatically trigger _searchTasks
     }
   }
 
@@ -196,8 +179,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       setState(() {
         _fetchErrorMessage = null;
         print('Tasks fetched successfully');
-
-        // Logic to determine initial page to display (no scroll animation)
         final List<TaskDto> allTasks = Provider.of<TaskProvider>(
           context,
           listen: false,
@@ -248,11 +229,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
             initialDisplayPageId,
           );
           if (_initialPageIndexForPageView == -1) {
-            _initialPageIndexForPageView =
-                0; // Fallback to first page if not found
+            _initialPageIndexForPageView = 0;
           }
         } else {
-          _initialPageIndexForPageView = 0; // Default to first page if no tasks
+          _initialPageIndexForPageView = 0;
         }
       });
     } catch (e) {
@@ -282,11 +262,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       'TaskBoardScreen: _scrollToPageAndStatus called with pageId: $pageId, status: $status',
     );
     setState(() {
-      _isSearching = false; // Close search UI when navigating
+      _isSearching = false;
       _isScrollingFromSearch = true;
       _pageToScrollTo = pageId;
       _statusToExpand = status;
-      _clearSearch(); // Clear search text and filter state
+      _clearSearch();
 
       _scrollTrigger++;
       print(
@@ -333,14 +313,12 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     });
   }
 
-  // New methods to handle global drag state
   void _handleDragStarted() {
     setState(() {
       _isDraggingTask = true;
     });
   }
 
-  // Corrected signature: removed DragEndDetails parameter
   void _handleDragEnded() {
     setState(() {
       _isDraggingTask = false;
@@ -365,46 +343,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     super.dispose();
   }
 
-  Color _getStatusColor(TaskStatus status, Brightness brightness) {
-    final baseColors = {
-      TaskStatus.backlog: Colors.blueGrey,
-      TaskStatus.toDiscuss: Colors.amber,
-      TaskStatus.inProgress: Colors.deepPurple,
-      TaskStatus.onHold: Colors.red,
-      TaskStatus.complete: Colors.green,
-      TaskStatus.toFollowUp: Colors.teal,
-    };
-
-    final baseColor = baseColors[status] ?? Colors.grey;
-
-    // Return the base color directly for both light and dark themes
-    return baseColor;
-  }
-
-  // Helper method to get an icon for each status
-  IconData _getStatusIcon(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.backlog:
-        return Icons.assignment;
-      case TaskStatus.toDiscuss:
-        return Icons.chat;
-      case TaskStatus.inProgress:
-        return Icons.work;
-      case TaskStatus.onHold:
-        return Icons.pause_circle_filled;
-      case TaskStatus.complete:
-        return Icons.check_circle;
-      case TaskStatus.toFollowUp:
-        return Icons.follow_the_signs;
-      case TaskStatus
-          .deleted: // Should not be a drop target, but for completeness
-        return Icons.delete;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  // NEW: Helper method for the default AppBar
   AppBar _buildDefaultAppBar(List<Tab> tabs) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
@@ -447,7 +385,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     );
   }
 
-  // NEW: Helper method for the search AppBar
   AppBar _buildSearchAppBar(List<Tab> tabs) {
     return AppBar(
       leading: IconButton(
@@ -455,7 +392,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         onPressed: () {
           setState(() {
             _isSearching = false;
-            _clearSearch(); // Clears text and resets filter state
+            _clearSearch();
           });
         },
       ),
@@ -477,7 +414,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         ),
       ),
       actions: [
-        // Conditionally show clear button based on text field content
         if (_searchController.text.isNotEmpty)
           IconButton(icon: const Icon(Icons.clear), onPressed: _clearSearch),
         IconButton(
@@ -557,10 +493,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               Icons.all_inclusive,
               size: 18,
               color: Theme.of(context).colorScheme.primary,
-            ), // Icon for "All Tasks"
+            ),
             const Text(
               'All Tasks',
-              style: TextStyle(fontSize: 9), // Smaller text for tabs
+              style: TextStyle(fontSize: 9),
               textAlign: TextAlign.center,
             ),
           ],
@@ -574,15 +510,13 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    _getStatusIcon(status),
+                    getStatusIcon(status),
                     size: 18,
-                    color: _getStatusColor(status, currentBrightness),
-                  ), // Use icon with status color
+                    color: getStatusColor(status, currentBrightness),
+                  ),
                   Text(
                     status.toApiString(),
-                    style: const TextStyle(
-                      fontSize: 9,
-                    ), // Smaller text for tabs
+                    style: const TextStyle(fontSize: 9),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -601,7 +535,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         statusExpandedState: _statusExpandedState,
         currentBrightness: currentBrightness,
         formatDate: _formatDate,
-        getStatusColor: _getStatusColor,
+        getStatusColor: getStatusColor,
         scrollToPageAndStatus: _scrollToPageAndStatus,
         pageToScrollTo: _pageToScrollTo,
         statusToExpand: _statusToExpand,
@@ -626,7 +560,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               statusExpandedState: _statusExpandedState,
               currentBrightness: currentBrightness,
               formatDate: _formatDate,
-              getStatusColor: _getStatusColor,
+              getStatusColor: getStatusColor,
               scrollToPageAndStatus: _scrollToPageAndStatus,
               scrollController: _scrollController,
               pageToScrollTo: _pageToScrollTo,
@@ -649,7 +583,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
-        // MODIFIED: AppBar is now built dynamically
         appBar: _isSearching
             ? _buildSearchAppBar(tabs)
             : _buildDefaultAppBar(tabs),
@@ -661,8 +594,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               physics: const AlwaysScrollableScrollPhysics(),
               children: tabViews,
             ),
-
-            // Floating Action Button - now inside the Stack
             Positioned(
               right: 16.0,
               bottom: 16.0,
@@ -671,12 +602,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   if (!mounted) return;
                   showAddTaskDialog(context);
                 },
-                label: const Text('Add New Task'),
+                label: const Text('New Task'),
                 icon: const Icon(Icons.add),
               ),
             ),
-
-            // Global drop targets (cans) visible when dragging - positioned above FAB
             if (_isDraggingTask)
               Positioned(
                 bottom: 0,
@@ -690,7 +619,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                     children: TaskStatus.values
                         .where((status) => status != TaskStatus.deleted)
                         .map(
-                          (status) => _buildStatusDropTarget(
+                          (status) => buildStatusDropTarget(
                             context,
                             status,
                             taskProvider,
@@ -780,90 +709,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatusDropTarget(
-    BuildContext context,
-    TaskStatus status,
-    TaskProvider taskProvider,
-    Brightness currentBrightness,
-  ) {
-    return DragTarget<TaskDto>(
-      onWillAcceptWithDetails: (data) {
-        return data.data.status != status;
-      },
-      onAcceptWithDetails: (details) async {
-        final draggedTask = details.data;
-        try {
-          final response = await taskProvider.updateTaskStatusForTodayPage(
-            draggedTask.id,
-            status,
-          );
-
-          final message = response?['message'] ?? 'Task status updated.';
-
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update task status: $e')),
-          );
-        }
-      },
-      builder: (context, candidateData, rejectedData) {
-        final bool isHovering = candidateData.isNotEmpty;
-        return Container(
-          width: 60,
-          height: 80,
-          decoration: BoxDecoration(
-            color: isHovering
-                ? _getStatusColor(status, currentBrightness).withOpacity(0.7)
-                : _getStatusColor(status, currentBrightness).withOpacity(0.4),
-            borderRadius: BorderRadius.circular(
-              15.0,
-            ), // Rounded corners for can look
-            border: Border.all(
-              color: isHovering
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.transparent,
-              width: 2.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 1,
-                blurRadius: 3,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                _getStatusIcon(status), // Helper for status icons
-                color: isHovering
-                    ? Colors.white
-                    : Theme.of(context).colorScheme.onSurface,
-                size: 24,
-              ),
-              Text(
-                status.toApiString(),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isHovering
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

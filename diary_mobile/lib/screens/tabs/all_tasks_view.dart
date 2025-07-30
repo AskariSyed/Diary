@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/widgets/page_list_item.dart';
+import 'package:intl/intl.dart';
 
 abstract class ExpansibleController extends ChangeNotifier {
   bool get isExpanded;
@@ -11,6 +12,13 @@ abstract class ExpansibleController extends ChangeNotifier {
 }
 
 class AllTasksView extends StatefulWidget {
+  String myFormatDateFunction(DateTime? date) {
+    if (date == null) {
+      return 'N/A';
+    }
+    return DateFormat('MMM dd').format(date);
+  }
+
   final List<TaskDto> tasksToShow;
   final Map<int, List<TaskDto>> tasksByPage;
   final List<int> sortedPageIds;
@@ -54,11 +62,9 @@ class _AllTasksViewState extends State<AllTasksView> {
   late PageController _pageController;
   late ScrollController _pageIndicatorScrollController;
   int _currentPageIndex = 0;
-
   static const double _kPageIndicatorHeight = 60.0;
   static const double _kIndividualIndicatorWidth = 30.0 + (4.0 * 2);
-  static const double _kVisibleIndicatorBarWidth =
-      _kIndividualIndicatorWidth * 5;
+  static const double _kVisibleIndicatorBarWidth = 240.0;
   bool _isAnimatingPageController = false;
   bool _isAnimatingIndicatorController = false;
 
@@ -67,7 +73,6 @@ class _AllTasksViewState extends State<AllTasksView> {
     super.initState();
     _pageController = PageController();
     _pageIndicatorScrollController = ScrollController();
-
     _handleInitialScroll();
     _pageController.addListener(() {
       if (_pageController.page != null && !_isAnimatingPageController) {
@@ -83,30 +88,6 @@ class _AllTasksViewState extends State<AllTasksView> {
         }
       }
     });
-    _pageIndicatorScrollController.addListener(() {
-      if (_pageIndicatorScrollController.position.isScrollingNotifier.value &&
-          !_isAnimatingIndicatorController) {
-        final double centerScrollOffset =
-            _pageIndicatorScrollController.offset +
-            (_kVisibleIndicatorBarWidth / 2);
-        int targetIndex = (centerScrollOffset / _kIndividualIndicatorWidth)
-            .round();
-        targetIndex = targetIndex.clamp(0, widget.sortedPageIds.length - 1);
-
-        if (targetIndex != _currentPageIndex) {
-          _isAnimatingPageController = true;
-          _pageController
-              .animateToPage(
-                targetIndex,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              )
-              .then((_) {
-                _isAnimatingPageController = false;
-              });
-        }
-      }
-    });
   }
 
   @override
@@ -114,6 +95,12 @@ class _AllTasksViewState extends State<AllTasksView> {
     super.didUpdateWidget(oldWidget);
     if (widget.scrollTrigger != oldWidget.scrollTrigger &&
         widget.pageToScrollTo != null) {
+      print(
+        'AllTasksView: didUpdateWidget triggered scroll for page: ${widget.pageToScrollTo}',
+      );
+      print(
+        'AllTasksView: Current sortedPageIds in didUpdateWidget: ${widget.sortedPageIds}',
+      );
       _handleScrollToPage();
     }
   }
@@ -128,7 +115,35 @@ class _AllTasksViewState extends State<AllTasksView> {
   void _handleInitialScroll() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.pageToScrollTo != null && mounted) {
-        _scrollToPageAndExpand(widget.pageToScrollTo!, widget.statusToExpand);
+        final int targetIndex = widget.sortedPageIds.indexOf(
+          widget.pageToScrollTo!,
+        );
+        print(
+          'AllTasksView: Initial scroll request for page: ${widget.pageToScrollTo}, calculated targetIndex: $targetIndex',
+        );
+        print(
+          'AllTasksView: Current sortedPageIds in _handleInitialScroll: ${widget.sortedPageIds}',
+        );
+
+        if (targetIndex != -1) {
+          if (_currentPageIndex != targetIndex) {
+            _scrollToPageAndExpand(
+              widget.pageToScrollTo!,
+              widget.statusToExpand,
+            );
+          } else if (widget.statusToExpand != null) {
+            widget.onScrollAndExpand(
+              widget.pageToScrollTo!,
+              widget.statusToExpand!,
+            );
+            widget.onScrollComplete?.call();
+          }
+        } else {
+          print(
+            'AllTasksView: Initial scroll target page ${widget.pageToScrollTo} not found in sortedPageIds.',
+          );
+          widget.onScrollComplete?.call();
+        }
       }
     });
   }
@@ -140,27 +155,57 @@ class _AllTasksViewState extends State<AllTasksView> {
   }
 
   void _scrollToPageAndExpand(int pageId, TaskStatus? statusToExpand) {
-    print('AllTasksView: Attempting to scroll to page $pageId');
+    print('AllTasksView: _scrollToPageAndExpand called for page $pageId');
+    print('AllTasksView: Current sortedPageIds: ${widget.sortedPageIds}');
     final int pageIndex = widget.sortedPageIds.indexOf(pageId);
+    print('AllTasksView: Calculated pageIndex for $pageId is $pageIndex');
+
     if (pageIndex != -1) {
+      if (_currentPageIndex == pageIndex) {
+        print(
+          'AllTasksView: Already on target page $pageId (index $pageIndex). Skipping PageView animation.',
+        );
+        if (statusToExpand != null) {
+          widget.onScrollAndExpand(pageId, statusToExpand);
+        }
+        widget.onScrollComplete?.call();
+        return;
+      }
+
       print(
-        'AllTasksView: Page $pageId found at index $pageIndex. Scrolling...',
+        'AllTasksView: Page $pageId found at index $pageIndex. Scrolling PageView...',
       );
+      print(
+        'AllTasksView: _currentPageIndex before animation: $_currentPageIndex',
+      );
+
+      _isAnimatingPageController = true;
       _pageController
           .animateToPage(
-            pageIndex + 1,
+            pageIndex,
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInToLinear,
           )
           .then((_) {
+            _isAnimatingPageController = false;
             print('AllTasksView: Scroll animation complete for page $pageId.');
-            if (statusToExpand != null) {
-              widget.onScrollAndExpand(pageId, statusToExpand);
-            }
-            widget.onScrollComplete?.call();
+            setState(() {
+              _currentPageIndex = pageIndex;
+            });
+            print(
+              'AllTasksView: _currentPageIndex updated to: $_currentPageIndex',
+            );
+            _scrollToCenterIndicator(_currentPageIndex).then((__) {
+              if (statusToExpand != null) {
+                widget.onScrollAndExpand(pageId, statusToExpand);
+              }
+              widget.onScrollComplete?.call();
+            });
           });
     } else {
-      print('AllTasksView: Page $pageId not found in sortedPageIds.');
+      print(
+        'AllTasksView: Page $pageId not found in sortedPageIds. Cannot scroll.',
+      );
       widget.onScrollComplete?.call();
     }
   }
@@ -173,6 +218,7 @@ class _AllTasksViewState extends State<AllTasksView> {
         (selectedIndex * _kIndividualIndicatorWidth) -
         ((_kVisibleIndicatorBarWidth / 2) - (_kIndividualIndicatorWidth / 2));
     targetOffset = targetOffset.clamp(0.0, maxScrollExtent);
+
     if ((targetOffset - currentScrollOffset).abs() > 1.0) {
       await _pageIndicatorScrollController.animateTo(
         targetOffset,
@@ -206,7 +252,7 @@ class _AllTasksViewState extends State<AllTasksView> {
                   left: 12.0,
                   right: 12.0,
                   top: 12.0,
-                  bottom: _kPageIndicatorHeight + 10,
+                  bottom: 10,
                 ),
                 child: PageListItem(
                   key: widget.getPageGlobalKey('all_tasks', pageId),
@@ -222,8 +268,9 @@ class _AllTasksViewState extends State<AllTasksView> {
               );
             },
           ),
+
           Positioned(
-            bottom: 40,
+            bottom: 63,
             left: 0,
             right: 0,
             child: Container(
@@ -239,6 +286,11 @@ class _AllTasksViewState extends State<AllTasksView> {
                     itemBuilder: (context, index) {
                       bool isSelected = _currentPageIndex == index;
                       final int pageId = widget.sortedPageIds[index];
+                      final DateTime? pageDate =
+                          widget.tasksByPage[pageId]?.isNotEmpty == true
+                          ? widget.tasksByPage[pageId]![0].pageDate
+                          : null;
+
                       IconData indicatorIcon = Icons.sticky_note_2_outlined;
                       if (pageId == mostRecentPageId) {
                         indicatorIcon = Icons.bookmark_outlined;
@@ -270,30 +322,32 @@ class _AllTasksViewState extends State<AllTasksView> {
                             ),
                           ),
                           child: Center(
-                            child: isSelected
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        indicatorIcon,
-                                        size: 15.0,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Page ${index + 1}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : Icon(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (isSelected)
+                                  Icon(
                                     indicatorIcon,
                                     size: 15.0,
                                     color: Colors.white,
                                   ),
+
+                                if (isSelected) const SizedBox(width: 4),
+                                Text(
+                                  pageDate != null
+                                      ? isSelected
+                                            ? widget.myFormatDateFunction(
+                                                pageDate,
+                                              )
+                                            : DateFormat('dd').format(pageDate)
+                                      : 'N/A',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );
