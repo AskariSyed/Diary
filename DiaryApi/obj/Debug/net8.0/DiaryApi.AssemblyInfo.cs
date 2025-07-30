@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DiaryApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c0fbd9ed07cbf9a35e01bc3d244a7ec4b6b16123")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4c160f7011a330e1afa42270bd556e26b23553b4")]
 [assembly: System.Reflection.AssemblyProductAttribute("DiaryApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DiaryApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

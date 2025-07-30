@@ -67,6 +67,7 @@ class _AllTasksViewState extends State<AllTasksView> {
     super.initState();
     _pageController = PageController();
     _pageIndicatorScrollController = ScrollController();
+
     _handleInitialScroll();
     _pageController.addListener(() {
       if (_pageController.page != null && !_isAnimatingPageController) {
@@ -147,7 +148,7 @@ class _AllTasksViewState extends State<AllTasksView> {
       );
       _pageController
           .animateToPage(
-            pageIndex,
+            pageIndex + 1,
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInToLinear,
           )

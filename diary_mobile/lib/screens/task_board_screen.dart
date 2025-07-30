@@ -45,6 +45,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   bool _isFiltering = false;
   bool _isScrollingFromSearch = false;
   bool _isDraggingTask = false; // New state variable for global drag status
+  bool _isSearching = false; // New state for interactive search bar
 
   late TabController _tabController;
   int?
@@ -69,7 +70,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       if (!_tabController.indexIsChanging) {
         if (_tabController.index == 0) {
           setState(() {
-            // Only trigger scroll for AllTasksView if a specific page is targeted (e.g., from search)
             if (_pageToScrollTo != null) {
               _scrollTrigger++;
             }
@@ -78,10 +78,9 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
           setState(() {
             _pageToScrollTo = null;
             _statusToExpand = null;
-            // REMOVED: _pageExpandedState.clear();
+
             _statusExpandedState.clear();
             _isScrollingFromSearch = false;
-            // Collapse all expansion tiles when switching tabs
             for (var controller in _expansionTileControllers.values) {
               if (controller.isExpanded) {
                 controller.collapse();
@@ -93,7 +92,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     });
   }
 
-  // UPDATED: This controller is now explicitly for Status ExpansionTiles
   ExpansibleController _getOrCreateExpansionTileController(String key) {
     return _expansionTileControllers.putIfAbsent(
       key,
@@ -108,32 +106,56 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
 
   void _onSearchChanged() {
     if (_searchController.text.isEmpty) {
-      _clearSearch();
+      // Don't call _clearSearch here directly to avoid recursion.
+      // Instead, just update the state. The user can explicitly clear.
+      _searchTasks();
     } else {
       _searchTasks();
     }
+    // We need to call setState to rebuild the AppBar with the clear icon
+    setState(() {});
   }
 
   void _searchTasks() {
-    final String searchText = _searchController.text.trim();
+    final String searchText = _searchController.text.trim().toLowerCase();
     final allTasks = Provider.of<TaskProvider>(context, listen: false).tasks;
 
     setState(() {
-      if (searchText.isEmpty) {
+      if (searchText.isEmpty && _selectedDate == null) {
         _filteredTasks = [];
         _isFiltering = false;
       } else {
         _filteredTasks = allTasks.where((task) {
-          return task.title.toLowerCase().contains(searchText.toLowerCase()) &&
+          final taskTitle = task.title.toLowerCase();
+          final formattedDate = _formatDate(task.pageDate).toLowerCase();
+
+          final matchesTitle =
+              searchText.isNotEmpty && taskTitle.contains(searchText);
+          final matchesDateText =
+              searchText.isNotEmpty && formattedDate.contains(searchText);
+          final matchesPickedDate =
+              _selectedDate != null &&
+              task.pageDate != null &&
+              task.pageDate!.year == _selectedDate!.year &&
+              task.pageDate!.month == _selectedDate!.month &&
+              task.pageDate!.day == _selectedDate!.day;
+
+          return (matchesTitle || matchesDateText || matchesPickedDate) &&
               task.status != TaskStatus.deleted;
         }).toList();
+
         _isFiltering = true;
       }
     });
   }
 
+  // MODIFIED: Patched to prevent recursion from listener.
   void _clearSearch() {
+    // Temporarily remove listener to prevent recursion when we clear the controller
+    _searchController.removeListener(_onSearchChanged);
     _searchController.clear();
+    _searchController.addListener(_onSearchChanged);
+
     setState(() {
       _selectedDate = null;
       _isFiltering = false;
@@ -142,7 +164,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         _pageToScrollTo = null;
         _statusToExpand = null;
       }
-      // REMOVED: _pageExpandedState.clear();
       _statusExpandedState.clear();
       for (var controller in _expansionTileControllers.values) {
         if (controller.isExpanded) {
@@ -150,6 +171,23 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         }
       }
     });
+  }
+
+  Future<void> _selectDateFromCalendar() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _searchController.text = _formatDate(picked);
+      });
+      // The listener on _searchController will automatically trigger _searchTasks
+    }
   }
 
   Future<void> _fetchTasksWithErrorHandling() async {
@@ -196,8 +234,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
           });
           initialDisplayPageId = mostRecentPage;
         }
-
-        // Set the initial page index for PageView.builder
         if (initialDisplayPageId != null) {
           final List<int> currentSortedPageIds = tasksByPageTemp.keys.toList()
             ..sort((a, b) {
@@ -246,11 +282,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       'TaskBoardScreen: _scrollToPageAndStatus called with pageId: $pageId, status: $status',
     );
     setState(() {
+      _isSearching = false; // Close search UI when navigating
       _isScrollingFromSearch = true;
       _pageToScrollTo = pageId;
       _statusToExpand = status;
-      _isFiltering = false;
-      _searchController.clear();
+      _clearSearch(); // Clear search text and filter state
 
       _scrollTrigger++;
       print(
@@ -368,6 +404,99 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     }
   }
 
+  // NEW: Helper method for the default AppBar
+  AppBar _buildDefaultAppBar(List<Tab> tabs) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+    return AppBar(
+      title: const Text('Diary Task Board'),
+      bottom: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabs: tabs,
+        indicatorColor: Theme.of(context).colorScheme.onSurface,
+        labelColor: Theme.of(context).colorScheme.onSurface,
+        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.search),
+          tooltip: 'Search Tasks',
+          onPressed: () {
+            setState(() {
+              _isSearching = true;
+            });
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.note_add),
+          tooltip: 'Add New Page',
+          onPressed: () =>
+              showAddPageDialog(context, taskProvider, _pageToScrollTo),
+        ),
+        IconButton(
+          icon: Icon(
+            themeProvider.themeMode == ThemeMode.light
+                ? Icons.light_mode_rounded
+                : Icons.dark_mode_rounded,
+          ),
+          onPressed: themeProvider.toggleTheme,
+        ),
+      ],
+    );
+  }
+
+  // NEW: Helper method for the search AppBar
+  AppBar _buildSearchAppBar(List<Tab> tabs) {
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: () {
+          setState(() {
+            _isSearching = false;
+            _clearSearch(); // Clears text and resets filter state
+          });
+        },
+      ),
+      title: TextField(
+        controller: _searchController,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: 'Search by title or date...',
+          border: InputBorder.none,
+          hintStyle: TextStyle(
+            color: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.color?.withOpacity(0.6),
+          ),
+        ),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 18,
+        ),
+      ),
+      actions: [
+        // Conditionally show clear button based on text field content
+        if (_searchController.text.isNotEmpty)
+          IconButton(icon: const Icon(Icons.clear), onPressed: _clearSearch),
+        IconButton(
+          icon: const Icon(Icons.calendar_today),
+          tooltip: 'Filter by Date',
+          onPressed: _selectDateFromCalendar,
+        ),
+      ],
+      bottom: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabs: tabs,
+        indicatorColor: Theme.of(context).colorScheme.onSurface,
+        labelColor: Theme.of(context).colorScheme.onSurface,
+        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
@@ -429,7 +558,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               size: 18,
               color: Theme.of(context).colorScheme.primary,
             ), // Icon for "All Tasks"
-            Text(
+            const Text(
               'All Tasks',
               style: TextStyle(fontSize: 9), // Smaller text for tabs
               textAlign: TextAlign.center,
@@ -520,62 +649,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Diary Task Board'),
-          bottom: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabs: tabs,
-            indicatorColor: Theme.of(context).colorScheme.onSurface,
-            labelColor: Theme.of(context).colorScheme.onSurface,
-            unselectedLabelColor: Theme.of(
-              context,
-            ).colorScheme.onSurfaceVariant,
-          ),
-          actions: [
-            SizedBox(
-              width: 250, // Adjust this width as needed
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search tasks by title...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: _clearSearch,
-                          )
-                        : const Icon(Icons.search),
-                  ),
-                  onChanged: (_) => _onSearchChanged(),
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.note_add),
-              tooltip: 'Add New Page',
-              onPressed: () =>
-                  showAddPageDialog(context, taskProvider, _pageToScrollTo),
-            ),
-            IconButton(
-              icon: Icon(
-                themeProvider.themeMode == ThemeMode.light
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
-              ),
-              onPressed: themeProvider.toggleTheme,
-            ),
-          ],
-        ),
+        // MODIFIED: AppBar is now built dynamically
+        appBar: _isSearching
+            ? _buildSearchAppBar(tabs)
+            : _buildDefaultAppBar(tabs),
         body: Stack(
           children: [
             TabBarView(
@@ -706,7 +783,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     );
   }
 
-  // Helper method to build a single status drop target "can"
   Widget _buildStatusDropTarget(
     BuildContext context,
     TaskStatus status,
@@ -715,20 +791,21 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   ) {
     return DragTarget<TaskDto>(
       onWillAcceptWithDetails: (data) {
-        // Only accept if the task's current status is different from this target status
         return data.data.status != status;
       },
       onAcceptWithDetails: (details) async {
         final draggedTask = details.data;
         try {
-          await taskProvider.updateTaskStatus(draggedTask.id, status);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Task "${draggedTask.title}" moved to ${status.toApiString()}',
-              ),
-            ),
+          final response = await taskProvider.updateTaskStatusForTodayPage(
+            draggedTask.id,
+            status,
           );
+
+          final message = response?['message'] ?? 'Task status updated.';
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to update task status: $e')),
@@ -770,7 +847,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 color: isHovering
                     ? Colors.white
                     : Theme.of(context).colorScheme.onSurface,
-                size: 24, // Keep icon size at 24 for better fit
+                size: 24,
               ),
               Text(
                 status.toApiString(),
@@ -779,7 +856,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   color: isHovering
                       ? Colors.white
                       : Theme.of(context).colorScheme.onSurface,
-                  fontSize: 10, // Keep font size at 10 for better fit
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
               ),

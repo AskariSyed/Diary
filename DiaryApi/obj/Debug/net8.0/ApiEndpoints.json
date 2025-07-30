@@ -298,6 +298,27 @@
   },
   {
     "ContainingType": "DiaryApi.Controllers.TasksController",
+    "Method": "ChangeStatusToTodayPage",
+    "RelativePath": "api/Tasks/pagetask/{pageTaskId}/status/today",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "pageTaskId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "updateDto",
+        "Type": "DiaryApi.Dtos.UpdateTaskStatusDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiaryApi.Controllers.TasksController",
     "Method": "UpdatePageTaskTitle",
     "RelativePath": "api/Tasks/pagetask/{pageTaskId}/title",
     "HttpMethod": "PUT",

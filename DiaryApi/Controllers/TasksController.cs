@@ -210,6 +210,70 @@ namespace DiaryApi.Controllers
 
             return await GetTaskHistoryByParentTaskId(pageTask.ParentTaskId);
         }
+        [HttpPut("pagetask/{pageTaskId}/status/today")]
+        public async Task<IActionResult> ChangeStatusToTodayPage(int pageTaskId, [FromBody] UpdateTaskStatusDto updateDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var originalPageTask = await _context.PageTasks
+                                                 .Include(pt => pt.Page)
+                                                 .Include(pt => pt.ParentTask)
+                                                 .FirstOrDefaultAsync(pt => pt.Id == pageTaskId);
+
+            if (originalPageTask == null)
+            {
+                return NotFound($"PageTask with ID {pageTaskId} not found.");
+            }
+
+            DateTime today = DateTime.Today;
+            DateTime taskDate = originalPageTask.Page.PageDate.Date;
+            Console.WriteLine($"Task Date: {taskDate}, Today: {today}, Comparison: {taskDate.CompareTo(today)}");
+
+
+            if (taskDate > today)
+            {
+                // Task is on a future page — do not move it, just update its status
+                originalPageTask.Status = updateDto.Status;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { Message = "Status updated for future task." });
+            }
+
+            if (taskDate == today)
+            {
+                // Task is already on today's page — update its status only
+                originalPageTask.Status = updateDto.Status;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { Message = "Status updated on existing task for today's page." });
+            }
+
+
+            // Task is on a past page — create a new one for today
+            var todayPage = await _context.Pages.FirstOrDefaultAsync(p => p.PageDate.Date == today);
+            if (todayPage == null)
+            {
+                todayPage = new Page { PageDate = today };
+                _context.Pages.Add(todayPage);
+                await _context.SaveChangesAsync();
+            }
+
+            var newPageTask = new PageTask
+            {
+                PageId = todayPage.PageId,
+                ParentTaskId = originalPageTask.ParentTaskId,
+                Title = originalPageTask.Title,
+                Status = updateDto.Status
+            };
+
+            _context.PageTasks.Add(newPageTask);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { NewPageTaskId = newPageTask.Id, Message = "Task copied and status updated on today's page." });
+        }
 
 
     }

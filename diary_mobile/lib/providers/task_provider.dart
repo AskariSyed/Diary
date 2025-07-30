@@ -12,8 +12,8 @@ class TaskProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  final String _tasksBaseUrl = 'https://430e9003f511.ngrok-free.app/api/Tasks';
-  final String _pagesBaseUrl = 'https://430e9003f511.ngrok-free.app/api/Pages';
+  final String _tasksBaseUrl = 'http://192.168.137.1:5158/api/Tasks';
+  final String _pagesBaseUrl = 'http://192.168.137.1:5158/api/Pages';
 
   List<TaskDto> get tasks => _tasks;
   bool get isLoading => _isLoading;
@@ -378,6 +378,48 @@ class TaskProvider with ChangeNotifier {
       print('Error fetching page by date: $e');
       _setErrorMessage('Network error while fetching page for $formattedDate');
       return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> updateTaskStatusForTodayPage(
+    int pageTaskId,
+    TaskStatus newStatus,
+  ) async {
+    _isLoading = true;
+    _clearErrorMessage();
+    notifyListeners();
+
+    try {
+      final response = await http.put(
+        Uri.parse('$_tasksBaseUrl/pagetask/$pageTaskId/status/today'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'Status': newStatus.toApiString()}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        await fetchTasks();
+        // Try to parse and return message if response has a body
+        if (response.body.isNotEmpty) {
+          print(response.body.toString());
+          return json.decode(response.body) as Map<String, dynamic>;
+        } else {
+          return {'Message': 'Task status updated with no response body.'};
+        }
+      } else {
+        _setErrorMessage(
+          'Failed to update task status for today: Server responded with status ${response.statusCode}. Body: ${response.body}',
+        );
+        return {'Message': 'Failed to update task status: ${response.body}'};
+      }
+    } catch (e) {
+      print('Error updating task status for today: $e');
+      _setErrorMessage(
+        'Failed to update task status for today due to network error or server issue.',
+      );
+      return {'Message': 'Network/server error occurred.'};
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

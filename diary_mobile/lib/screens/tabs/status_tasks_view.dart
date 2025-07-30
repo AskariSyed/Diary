@@ -46,8 +46,8 @@ class StatusTasksView extends StatefulWidget {
     required this.filterStatus,
     this.onScrollComplete,
     required this.expansionTileControllers,
-    required this.onDragStarted, // Initialize new parameter
-    required this.onDragEnded, // Initialize new parameter
+    required this.onDragStarted,
+    required this.onDragEnded,
   });
 
   @override

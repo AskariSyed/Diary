@@ -101,8 +101,6 @@ namespace DiaryApi.Controllers
             return Ok(page);
         }
 
-        // You'll likely want other endpoints for Pages as well:
-        // GET: api/pages/by-diary/{diaryId}
         [HttpGet("by-diary/{diaryId}")]
         public async Task<ActionResult<IEnumerable<Page>>> GetPagesByDiary(int diaryId)
         {
@@ -130,7 +128,7 @@ namespace DiaryApi.Controllers
             {
                 return NotFound($"No tasks found for Page ID {pageId}.");
             }
-            // Map to a TaskDto if you have one for PageTask
+           
             return Ok(tasks);
         }
         [HttpGet("by-date")]
