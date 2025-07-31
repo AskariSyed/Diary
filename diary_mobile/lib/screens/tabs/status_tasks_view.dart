@@ -160,13 +160,11 @@ class _StatusTasksViewState extends State<StatusTasksView> {
       );
     }
 
-    // Removed the outer DragTarget as drop targets will be global "cans" in TaskBoardScreen
     return ListView.builder(
       controller: widget.scrollController,
       itemCount: filteredTasksForTab.length,
       itemBuilder: (context, index) {
         final task = filteredTasksForTab[index];
-        // Wrap each task Card with LongPressDraggable
         return LongPressDraggable<TaskDto>(
           data: task,
           feedback: Material(
@@ -200,20 +198,13 @@ class _StatusTasksViewState extends State<StatusTasksView> {
             child: Card(
               margin: const EdgeInsets.symmetric(
                 horizontal: 8.0,
-                vertical: 4.0,
+                vertical: 1.0,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListTile(
-                    title: Text(
-                      task.title,
-                      style: TextStyle(
-                        decoration: task.status == TaskStatus.complete
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
+                    title: Text(task.title, style: TextStyle()),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

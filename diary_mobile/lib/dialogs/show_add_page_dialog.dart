@@ -84,9 +84,6 @@ void showAddPageDialog(
                   taskProvider.clearErrorMessage();
 
                   try {
-                    final int? oldMostRecentPageId = taskProvider
-                        .getCurrentMostRecentPageId();
-
                     final int newPageId = await taskProvider.createNewPage(
                       1,
                       selectedPageDate!,

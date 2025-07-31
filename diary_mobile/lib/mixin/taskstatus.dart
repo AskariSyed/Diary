@@ -66,7 +66,7 @@ extension StringToTaskStatusExtension on String {
 
 // This is the correct way to implement a custom controller for ExpansionTile
 class DiaryExpansionTileController extends ChangeNotifier
-    implements ExpansionTileController {
+    implements ExpansibleController {
   AnimationController? _animationController;
   bool _isExpanded = false; // Internal state to track expansion
 
@@ -75,7 +75,7 @@ class DiaryExpansionTileController extends ChangeNotifier
 
   // Called by ExpansionTile to provide its internal AnimationController
   // This method is part of the ExpansionTileController interface
-  @override
+
   void attach(AnimationController controller) {
     if (_animationController == controller) {
       return; // Already attached to this controller
@@ -91,7 +91,7 @@ class DiaryExpansionTileController extends ChangeNotifier
 
   // Called by ExpansionTile when it's detached (e.g., widget removed from tree)
   // This method is part of the ExpansionTileController interface
-  @override
+
   void detach() {
     _animationController?.removeListener(_handleAnimationChange);
     _animationController = null;

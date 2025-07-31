@@ -389,6 +389,37 @@
         }
       }
     },
+    "/api/Pages/copy-tasks": {
+      "post": {
+        "tags": [
+          "Pages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyTasksDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyTasksDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyTasksDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Tasks/create": {
       "post": {
         "tags": [
@@ -719,6 +750,24 @@
   },
   "components": {
     "schemas": {
+      "CopyTasksDto": {
+        "required": [
+          "sourcePageDate",
+          "targetPageDate"
+        ],
+        "type": "object",
+        "properties": {
+          "sourcePageDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "targetPageDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreatePageDto": {
         "required": [
           "diaryNo",

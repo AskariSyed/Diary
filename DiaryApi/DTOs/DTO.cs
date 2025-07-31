@@ -77,5 +77,14 @@ namespace DiaryApi.Dtos
         public string Title { get; set; }
         public string Status { get; set; }
     }
+  
+public class CopyTasksDto
+    {
+        [Required(ErrorMessage = "Source page date is required.")]
+        public DateTime SourcePageDate { get; set; }
+
+        [Required(ErrorMessage = "Target page date is required.")]
+        public DateTime TargetPageDate { get; set; }
+    }
 }
 

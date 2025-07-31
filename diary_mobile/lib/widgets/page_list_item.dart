@@ -4,6 +4,7 @@ import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:diary_mobile/widgets/task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class PageListItem extends StatefulWidget {
   final int pageId;
@@ -37,9 +38,21 @@ class PageListItem extends StatefulWidget {
 }
 
 class _PageListItemState extends State<PageListItem> {
+  // Declare a ScrollController for this instance
+  late final ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    // Initialize the controller
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    // Dispose of the controller
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -50,19 +63,13 @@ class _PageListItemState extends State<PageListItem> {
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
-
     final pageDate = widget.currentPageTasks.isNotEmpty
         ? widget.currentPageTasks.first.pageDate
         : null;
 
-    final today = DateTime.now();
     final bool isTodayOrFuture =
         pageDate != null &&
-        (pageDate.year > today.year ||
-            (pageDate.year == today.year &&
-                (pageDate.month > today.month ||
-                    (pageDate.month == today.month &&
-                        pageDate.day >= today.day))));
+        !pageDate.isBefore(DateUtils.dateOnly(DateTime.now()));
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -71,24 +78,33 @@ class _PageListItemState extends State<PageListItem> {
         margin: EdgeInsets.zero,
         color: Theme.of(context).cardColor,
         child: Column(
-          // Use Column directly as the child of Card
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(
-                '${widget.formatDate(pageDate)}',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
-                ),
+              child: Row(
+                children: [
+                  Text(
+                    '${widget.formatDate(pageDate)}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () =>
+                        _showDatePickerAndCopyTasks(context, pageDate),
+                    icon: const Icon(Icons.move_to_inbox),
+                    tooltip: 'Copy tasks from another day',
+                  ),
+                ],
               ),
             ),
-            const Divider(height: 24, thickness: 1),
+            const Divider(height: 1, thickness: 1),
             Expanded(
               child: Padding(
-                // Keep padding if desired
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _buildScrollablePageContent(
                   isTodayOrFuture,
@@ -102,6 +118,103 @@ class _PageListItemState extends State<PageListItem> {
     );
   }
 
+  Future<void> _showDatePickerAndCopyTasks(
+    BuildContext context,
+    DateTime? targetPageDate,
+  ) async {
+    if (targetPageDate == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: Target page date is not available.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+    DateTime? selectedSourceDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 1)),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(DateTime.now().year + 10, 12, 31),
+      // Cannot copy from a future date
+      helpText: 'Select date to copy tasks from',
+      fieldLabelText: 'Source Date',
+    );
+    if (selectedSourceDate == null) {
+      return;
+    }
+
+    selectedSourceDate = DateUtils.dateOnly(selectedSourceDate);
+    final DateTime cleanTargetDate = DateUtils.dateOnly(targetPageDate);
+
+    if (selectedSourceDate.isAtSameMomentAs(cleanTargetDate)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot copy tasks to the same day.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final bool? confirmCopy = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm Task Copy'),
+        content: Text(
+          'Are you sure you want to copy all uncompleted and undeleted tasks from '
+          '${widget.formatDate(selectedSourceDate)} to ' // Use the selected source date directly
+          '${widget.formatDate(cleanTargetDate)}?', // Use the clean target date
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Copy'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmCopy != true) {
+      return;
+    }
+
+    try {
+      await taskProvider.copyPageTasks(
+        sourceDate: selectedSourceDate,
+        targetDate: cleanTargetDate,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Tasks successfully copied from ${widget.formatDate(selectedSourceDate)}!',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      taskProvider.fetchTasks();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to copy tasks: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Widget _buildScrollablePageContent(
     bool isTodayOrFuture,
     TaskProvider taskProvider,
@@ -109,6 +222,7 @@ class _PageListItemState extends State<PageListItem> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
+          controller: _scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: TaskStatus.values
@@ -136,8 +250,7 @@ class _PageListItemState extends State<PageListItem> {
                       children: [
                         DragTarget<TaskDto>(
                           onWillAcceptWithDetails: (data) {
-                            return isTodayOrFuture &&
-                                data.data.pageId == widget.pageId &&
+                            return data.data.pageId == widget.pageId &&
                                 data.data.status != status;
                           },
                           onAcceptWithDetails: (details) async {
@@ -186,12 +299,12 @@ class _PageListItemState extends State<PageListItem> {
                                       return buildTaskCard(
                                         task,
                                         taskProvider,
-                                        isTodayOrFuture,
+                                        true,
                                         context,
                                       );
                                     }).toList(),
                                   ),
-                                  if (tasksInStatus.isEmpty && isTodayOrFuture)
+                                  if (tasksInStatus.isEmpty)
                                     SizedBox(
                                       height: 50,
                                       child: Center(

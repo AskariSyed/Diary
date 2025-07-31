@@ -103,6 +103,7 @@ Widget buildEmptyState(
               size: 80,
               color: Theme.of(
                 context,
+                // ignore: deprecated_member_use
               ).textTheme.bodySmall?.color?.withOpacity(0.6),
             ),
             const SizedBox(height: 24),

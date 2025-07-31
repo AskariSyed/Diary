@@ -15,7 +15,8 @@ import 'package:intl/intl.dart';
 
 // Import the new tab view files
 import 'package:diary_mobile/screens/tabs/all_tasks_view.dart'
-    hide ExpansibleController;
+    hide
+        ExpansibleController; // Ensure ExpansibleController is correctly handled if it's in multiple files
 import 'package:diary_mobile/screens/tabs/status_tasks_view.dart';
 
 class TaskBoardScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class TaskBoardScreen extends StatefulWidget {
 }
 
 class _TaskBoardScreenState extends State<TaskBoardScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final Map<String, bool> _statusExpandedState = {};
   final Map<String, ExpansibleController> _expansionTileControllers = {};
   final ScrollController _scrollController = ScrollController();
@@ -44,8 +45,15 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   bool _isDraggingTask = false;
   bool _isSearching = false;
 
-  late TabController _tabController;
-  int? _initialPageIndexForPageView;
+  late TabController _mainTabController;
+  late TabController _filterTabController;
+
+  // Keep track of the currently selected status for filtering
+  TaskStatus? _currentFilterStatus;
+
+  // This variable will hold the index for the 'Diary' tab's initial view
+  // It should be used to directly set the index of _mainTabController
+  int _initialMainTabIndex = 0;
 
   @override
   void initState() {
@@ -53,28 +61,36 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     Future.microtask(() => _fetchTasksWithErrorHandling());
     _searchController.addListener(_onSearchChanged);
 
-    _tabController = TabController(
-      length:
-          TaskStatus.values
-              .where((status) => status != TaskStatus.deleted)
-              .length +
-          1,
+    // Initialize main tab controller (Diary, Filters)
+    _mainTabController = TabController(
+      length: 2, // 'Diary' and 'Filters'
+      vsync: this,
+      initialIndex: _initialMainTabIndex, // Set initial index here
+    );
+
+    // Initialize filter tab controller (for individual statuses)
+    _filterTabController = TabController(
+      length: TaskStatus.values
+          .where((status) => status != TaskStatus.deleted)
+          .length,
       vsync: this,
     );
 
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        if (_tabController.index == 0) {
+    _mainTabController.addListener(() {
+      if (!_mainTabController.indexIsChanging) {
+        if (_mainTabController.index == 0) {
+          // Switched to Diary tab
           setState(() {
+            _currentFilterStatus = null; // Clear any active status filter
             if (_pageToScrollTo != null) {
               _scrollTrigger++;
             }
           });
         } else {
+          // Switched to Filters tab
           setState(() {
             _pageToScrollTo = null;
             _statusToExpand = null;
-
             _statusExpandedState.clear();
             _isScrollingFromSearch = false;
             for (var controller in _expansionTileControllers.values) {
@@ -82,8 +98,27 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 controller.collapse();
               }
             }
+
+            // Ensure we don't try to animate during an index change
+            _filterTabController.animateTo(
+              TaskStatus.backlog.index,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+            _currentFilterStatus = TaskStatus.backlog;
           });
         }
+      }
+    });
+
+    _filterTabController.addListener(() {
+      if (!_filterTabController.indexIsChanging) {
+        final filteredStatuses = TaskStatus.values
+            .where((status) => status != TaskStatus.deleted)
+            .toList();
+        setState(() {
+          _currentFilterStatus = filteredStatuses[_filterTabController.index];
+        });
       }
     });
   }
@@ -225,14 +260,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               if (dateB == null) return 1;
               return dateA.compareTo(dateB);
             });
-          _initialPageIndexForPageView = currentSortedPageIds.indexOf(
-            initialDisplayPageId,
-          );
-          if (_initialPageIndexForPageView == -1) {
-            _initialPageIndexForPageView = 0;
-          }
+          // Set the initial index for the main tab controller to 0 (Diary tab)
+          // The pageToScrollTo will then handle the specific page within the Diary tab
+          _initialMainTabIndex = 0;
         } else {
-          _initialPageIndexForPageView = 0;
+          _initialMainTabIndex = 0;
         }
       });
     } catch (e) {
@@ -274,10 +306,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       );
     });
 
-    if (_tabController.index != 0) {
+    // If currently on the "Filters" tab, switch to "Diary" tab
+    if (_mainTabController.index != 0) {
       print('TaskBoardScreen: Switching to All Tasks tab.');
       if (mounted) {
-        _tabController.animateTo(
+        _mainTabController.animateTo(
           0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
@@ -335,102 +368,13 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     _scrollController.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
-    _tabController.dispose();
+    _mainTabController.dispose();
+    _filterTabController.dispose();
     for (var controller in _expansionTileControllers.values) {
       controller.dispose();
     }
     _expansionTileControllers.clear();
     super.dispose();
-  }
-
-  AppBar _buildDefaultAppBar(List<Tab> tabs) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-
-    return AppBar(
-      title: const Text('Diary Task Board'),
-      bottom: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        tabs: tabs,
-        indicatorColor: Theme.of(context).colorScheme.onSurface,
-        labelColor: Theme.of(context).colorScheme.onSurface,
-        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search),
-          tooltip: 'Search Tasks',
-          onPressed: () {
-            setState(() {
-              _isSearching = true;
-            });
-          },
-        ),
-        IconButton(
-          icon: const Icon(Icons.note_add),
-          tooltip: 'Add New Page',
-          onPressed: () =>
-              showAddPageDialog(context, taskProvider, _pageToScrollTo),
-        ),
-        IconButton(
-          icon: Icon(
-            themeProvider.themeMode == ThemeMode.light
-                ? Icons.light_mode_rounded
-                : Icons.dark_mode_rounded,
-          ),
-          onPressed: themeProvider.toggleTheme,
-        ),
-      ],
-    );
-  }
-
-  AppBar _buildSearchAppBar(List<Tab> tabs) {
-    return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: () {
-          setState(() {
-            _isSearching = false;
-            _clearSearch();
-          });
-        },
-      ),
-      title: TextField(
-        controller: _searchController,
-        autofocus: true,
-        decoration: InputDecoration(
-          hintText: 'Search by title or date...',
-          border: InputBorder.none,
-          hintStyle: TextStyle(
-            color: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.color?.withOpacity(0.6),
-          ),
-        ),
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 18,
-        ),
-      ),
-      actions: [
-        if (_searchController.text.isNotEmpty)
-          IconButton(icon: const Icon(Icons.clear), onPressed: _clearSearch),
-        IconButton(
-          icon: const Icon(Icons.calendar_today),
-          tooltip: 'Filter by Date',
-          onPressed: _selectDateFromCalendar,
-        ),
-      ],
-      bottom: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        tabs: tabs,
-        indicatorColor: Theme.of(context).colorScheme.onSurface,
-        labelColor: Theme.of(context).colorScheme.onSurface,
-        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-    );
   }
 
   @override
@@ -484,126 +428,267 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       );
     }
 
-    final List<Tab> tabs = [
-      Tab(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.all_inclusive,
-              size: 18,
-              color: Theme.of(context).colorScheme.primary,
+    return DefaultTabController(
+      length: 2, // 'Diary' and 'Filters'
+      child: Scaffold(
+        appBar: AppBar(
+          title: _isSearching
+              ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Search by title or date...',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodyLarge?.color?.withOpacity(0.6),
+                    ),
+                  ),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                  ),
+                )
+              : const Text(
+                  'Diary ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
+                  ),
+                ),
+          leading: _isSearching
+              ? IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = false;
+                      _clearSearch();
+                    });
+                  },
+                )
+              : null,
+          actions: [
+            if (_isSearching && _searchController.text.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: _clearSearch,
+              ),
+            if (_isSearching)
+              IconButton(
+                icon: const Icon(Icons.calendar_today),
+                tooltip: 'Filter by Date',
+                onPressed: _selectDateFromCalendar,
+              ),
+            if (!_isSearching)
+              IconButton(
+                icon: const Icon(Icons.search),
+                tooltip: 'Search Tasks',
+                onPressed: () {
+                  setState(() {
+                    _isSearching = true;
+                  });
+                },
+              ),
+            IconButton(
+              icon: const Icon(Icons.note_add),
+              tooltip: 'Add New Page',
+              onPressed: () =>
+                  showAddPageDialog(context, taskProvider, _pageToScrollTo),
             ),
-            const Text(
-              'All Tasks',
-              style: TextStyle(fontSize: 9),
-              textAlign: TextAlign.center,
+            IconButton(
+              icon: Icon(
+                themeProvider.themeMode == ThemeMode.light
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+              ),
+              onPressed: themeProvider.toggleTheme,
             ),
           ],
+          // This is where the main TabBar will be placed
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(
+              _mainTabController.index == 0
+                  ? kToolbarHeight
+                  : kToolbarHeight * 2,
+            ),
+            child: Column(
+              children: [
+                TabBar(
+                  controller: _mainTabController,
+                  tabs: [
+                    Tab(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.book, // A more diary-like icon
+                              size: 24, // Bigger icon
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const Text(
+                              'My Diary', // Bigger text
+                              style: TextStyle(fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Tab(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.filter_list,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const Text(
+                            'Filters',
+                            style: TextStyle(fontSize: 9),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  indicatorColor: Theme.of(context).colorScheme.onSurface,
+                  labelColor: Theme.of(context).colorScheme.onSurface,
+                  unselectedLabelColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
+                ),
+                // Conditional TabBar for filters
+                if (_mainTabController.index != 0)
+                  TabBar(
+                    controller: _filterTabController,
+                    isScrollable: true,
+                    tabs: TaskStatus.values
+                        .where((status) => status != TaskStatus.deleted)
+                        .map(
+                          (status) => Tab(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  getStatusIcon(status),
+                                  size: 18,
+                                  color: getStatusColor(
+                                    status,
+                                    currentBrightness,
+                                  ),
+                                ),
+                                Text(
+                                  status.toApiString(),
+                                  style: const TextStyle(fontSize: 9),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    indicatorColor: Theme.of(context).colorScheme.onSurface,
+                    labelColor: Theme.of(context).colorScheme.onSurface,
+                    unselectedLabelColor: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant,
+                  ),
+              ],
+            ),
+          ),
         ),
-      ),
-      ...TaskStatus.values
-          .where((status) => status != TaskStatus.deleted)
-          .map(
-            (status) => Tab(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    getStatusIcon(status),
-                    size: 18,
-                    color: getStatusColor(status, currentBrightness),
-                  ),
-                  Text(
-                    status.toApiString(),
-                    style: const TextStyle(fontSize: 9),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-    ];
-
-    final List<Widget> tabViews = [
-      AllTasksView(
-        scrollTrigger: _scrollTrigger,
-        tasksToShow: tasksToShow,
-        tasksByPage: tasksByPage,
-        sortedPageIds: sortedPageIds,
-        getPageGlobalKey: _getPageGlobalKey,
-        statusExpandedState: _statusExpandedState,
-        currentBrightness: currentBrightness,
-        formatDate: _formatDate,
-        getStatusColor: getStatusColor,
-        scrollToPageAndStatus: _scrollToPageAndStatus,
-        pageToScrollTo: _pageToScrollTo,
-        statusToExpand: _statusToExpand,
-        onScrollComplete: () {
-          setState(() {
-            _pageToScrollTo = null;
-            _statusToExpand = null;
-            _isScrollingFromSearch = false;
-          });
-        },
-        onScrollAndExpand: _onScrollAndExpand,
-        expansionTileControllers: _expansionTileControllers,
-      ),
-      ...TaskStatus.values
-          .where((status) => status != TaskStatus.deleted)
-          .map(
-            (status) => StatusTasksView(
-              tasksToShow: tasksToShow,
-              tasksByPage: tasksByPage,
-              sortedPageIds: sortedPageIds,
-              getPageGlobalKey: _getPageGlobalKey,
-              statusExpandedState: _statusExpandedState,
-              currentBrightness: currentBrightness,
-              formatDate: _formatDate,
-              getStatusColor: getStatusColor,
-              scrollToPageAndStatus: _scrollToPageAndStatus,
-              scrollController: _scrollController,
-              pageToScrollTo: _pageToScrollTo,
-              statusToExpand: _statusToExpand,
-              filterStatus: status,
-              onScrollComplete: () {
-                setState(() {
-                  _pageToScrollTo = null;
-                  _statusToExpand = null;
-                  _isScrollingFromSearch = false;
-                });
-              },
-              expansionTileControllers: _expansionTileControllers,
-              onDragStarted: _handleDragStarted, // Pass callback
-              onDragEnded: _handleDragEnded, // Pass callback
-            ),
-          ),
-    ];
-
-    return DefaultTabController(
-      length: tabs.length,
-      child: Scaffold(
-        appBar: _isSearching
-            ? _buildSearchAppBar(tabs)
-            : _buildDefaultAppBar(tabs),
         body: Stack(
           children: [
             TabBarView(
-              controller: _tabController,
-              // Add this line to enable swiping
+              controller: _mainTabController,
               physics: const AlwaysScrollableScrollPhysics(),
-              children: tabViews,
+              children: [
+                // "Diary" Tab Content (All Tasks View)
+                AllTasksView(
+                  scrollTrigger: _scrollTrigger,
+                  tasksToShow: tasksToShow,
+                  tasksByPage: tasksByPage,
+                  sortedPageIds: sortedPageIds,
+                  getPageGlobalKey: _getPageGlobalKey,
+                  statusExpandedState: _statusExpandedState,
+                  currentBrightness: currentBrightness,
+                  formatDate: _formatDate,
+                  getStatusColor: getStatusColor,
+                  scrollToPageAndStatus: _scrollToPageAndStatus,
+                  pageToScrollTo: _pageToScrollTo,
+                  statusToExpand: _statusToExpand,
+                  onScrollComplete: () {
+                    setState(() {
+                      _pageToScrollTo = null;
+                      _statusToExpand = null;
+                      _isScrollingFromSearch = false;
+                    });
+                  },
+                  onScrollAndExpand: _onScrollAndExpand,
+                  expansionTileControllers: _expansionTileControllers,
+                ),
+                // "Filters" Tab Content (Status Tasks View, conditional on selected status)
+                _currentFilterStatus == null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.filter_list,
+                              size: 80,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Select a status to filter tasks',
+                              style: Theme.of(context).textTheme.titleLarge,
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    : StatusTasksView(
+                        tasksToShow: tasksToShow,
+                        tasksByPage: tasksByPage,
+                        sortedPageIds: sortedPageIds,
+                        getPageGlobalKey: _getPageGlobalKey,
+                        statusExpandedState: _statusExpandedState,
+                        currentBrightness: currentBrightness,
+                        formatDate: _formatDate,
+                        getStatusColor: getStatusColor,
+                        scrollToPageAndStatus: _scrollToPageAndStatus,
+                        scrollController: _scrollController,
+                        pageToScrollTo: _pageToScrollTo,
+                        statusToExpand: _statusToExpand,
+                        filterStatus: _currentFilterStatus!,
+                        onScrollComplete: () {
+                          setState(() {
+                            _pageToScrollTo = null;
+                            _statusToExpand = null;
+                            _isScrollingFromSearch = false;
+                          });
+                        },
+                        expansionTileControllers: _expansionTileControllers,
+                        onDragStarted: _handleDragStarted,
+                        onDragEnded: _handleDragEnded,
+                      ),
+              ],
             ),
             Positioned(
               right: 16.0,
               bottom: 16.0,
-              child: FloatingActionButton.extended(
+              child: FloatingActionButton(
+                child: const Icon(Icons.add),
                 onPressed: () async {
                   if (!mounted) return;
                   showAddTaskDialog(context);
                 },
-                label: const Text('New Task'),
-                icon: const Icon(Icons.add),
               ),
             ),
             if (_isDraggingTask)
@@ -630,7 +715,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   ),
                 ),
               ),
-
             if (_isFiltering && _filteredTasks.isNotEmpty)
               Positioned(
                 top: 0,
@@ -680,7 +764,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   ),
                 ),
               ),
-
             if (_isFiltering && _filteredTasks.isEmpty)
               Center(
                 child: Column(

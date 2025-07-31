@@ -209,6 +209,22 @@
   },
   {
     "ContainingType": "DiaryApi.Controllers.PagesController",
+    "Method": "CopyTasks",
+    "RelativePath": "api/Pages/copy-tasks",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "copyDto",
+        "Type": "DiaryApi.Dtos.CopyTasksDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiaryApi.Controllers.PagesController",
     "Method": "CreatePage",
     "RelativePath": "api/Pages/create",
     "HttpMethod": "POST",

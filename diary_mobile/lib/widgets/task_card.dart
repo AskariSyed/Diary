@@ -4,6 +4,7 @@ import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 Widget buildTaskCard(
   TaskDto task,
@@ -51,11 +52,6 @@ Widget buildTaskCard(
       onTap: () => showEditTaskDialog(context, taskProvider, task),
     ),
   );
-
-  if (!isDraggableAndEditable) {
-    return cardContent;
-  }
-
   return LongPressDraggable<TaskDto>(
     data: task,
     feedback: Material(

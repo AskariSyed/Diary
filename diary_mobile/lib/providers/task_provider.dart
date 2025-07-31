@@ -13,7 +13,8 @@ class TaskProvider with ChangeNotifier {
   String? _errorMessage;
 
   final String _tasksBaseUrl = 'http://192.168.137.1:5158/api/Tasks';
-  final String _pagesBaseUrl = 'http://192.168.137.1:5158/api/Pages';
+  final String _pagesBaseUrl =
+      'http://192.168.137.1:5158/api/Pages'; // Keep this as 'Tasks'
 
   List<TaskDto> get tasks => _tasks;
   bool get isLoading => _isLoading;
@@ -417,6 +418,84 @@ class TaskProvider with ChangeNotifier {
         'Failed to update task status for today due to network error or server issue.',
       );
       return {'Message': 'Network/server error occurred.'};
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> copyPageTasks({
+    required DateTime sourceDate,
+    required DateTime targetDate,
+  }) async {
+    _isLoading = true;
+    _clearErrorMessage();
+    notifyListeners();
+    try {
+      final url = Uri.parse('$_pagesBaseUrl/copy-tasks');
+      final headers = {'Content-Type': 'application/json'};
+
+      final body = json.encode({
+        'sourcePageDate': sourceDate.toIso8601String(),
+        'targetPageDate': targetDate.toIso8601String(),
+      });
+
+      print('Sending copy tasks request to: $url with body: $body');
+
+      final response = await http.post(url, headers: headers, body: body);
+
+      print(
+        'Received copy tasks response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 404) {
+        throw Exception(
+          'Source page not found for the selected date. No tasks to copy.',
+        );
+      } else if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to copy tasks: ${response.statusCode} ${response.body}',
+        );
+      }
+
+      // VVVV MODIFIED CODE STARTS HERE VVVV
+      // Check if the response body is not empty and is valid JSON before decoding
+      String successMessage =
+          "Tasks copied successfully!"; // Default success message
+      try {
+        // Attempt to decode, but catch the FormatException if it's not JSON
+        final dynamic decodedResponse = json.decode(response.body);
+        if (decodedResponse is Map && decodedResponse.containsKey('message')) {
+          successMessage = decodedResponse['message'];
+        } else if (decodedResponse is String) {
+          // If the backend happens to send a JSON string, extract it
+          successMessage = decodedResponse;
+        }
+        // If it's just a plain string (like your backend sends), this will fail,
+        // and we'll fall to the outer catch if the try-catch for decoding wasn't here.
+        // However, for this specific case, we just use response.body directly for success message.
+      } on FormatException {
+        // This catches the exact error you were getting.
+        // If it's not JSON, we assume the whole body is the success message.
+        successMessage = response.body;
+      } catch (e) {
+        // Catch any other unexpected errors during parsing
+        print(
+          'Warning: Could not parse response body as JSON. Using raw body. Error: $e',
+        );
+        successMessage = response.body;
+      }
+
+      print(
+        'Copy tasks successful: $successMessage',
+      ); // Use the message we've extracted
+      // ^^^^ MODIFIED CODE ENDS HERE ^^^^
+
+      await fetchTasks();
+    } catch (e) {
+      print('Error copying tasks: $e');
+      _setErrorMessage('Failed to copy tasks: ${e.toString()}');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
