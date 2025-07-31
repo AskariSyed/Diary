@@ -4,11 +4,11 @@ import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/screens/build_empty_state.dart';
 import 'package:diary_mobile/screens/build_error_state.dart';
 import 'package:diary_mobile/screens/build_loading_screen.dart';
-import 'package:diary_mobile/widgets/status_dropTarget.dart';
+import 'package:diary_mobile/widgets/status_dropTarget.dart'; // Ensure this import is correct
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/models/task_dto.dart';
-import '/mixin/taskstatus.dart';
+import '/mixin/taskstatus.dart'; // Ensure this import is correct
 import '/providers/task_provider.dart';
 import '/providers/theme_provider.dart';
 import 'package:intl/intl.dart';
@@ -98,8 +98,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 controller.collapse();
               }
             }
-
-            // Ensure we don't try to animate during an index change
             _filterTabController.animateTo(
               TaskStatus.backlog.index,
               duration: const Duration(milliseconds: 300),
@@ -451,7 +449,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   ),
                 )
               : const Text(
-                  'Diary ',
+                  'E-Diary',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.deepPurple,
@@ -526,11 +524,20 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                             Icon(
                               Icons.book, // A more diary-like icon
                               size: 24, // Bigger icon
-                              color: Theme.of(context).colorScheme.primary,
+                              color: _mainTabController.index == 0
+                                  ? Colors
+                                        .deepPurple // Purple when selected
+                                  : Colors.grey, // Grey when not selected
                             ),
-                            const Text(
+                            Text(
                               'My Diary', // Bigger text
-                              style: TextStyle(fontSize: 14),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: _mainTabController.index == 0
+                                    ? Colors
+                                          .deepPurple // Purple when selected
+                                    : Colors.grey, // Grey when not selected
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -544,11 +551,20 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                           Icon(
                             Icons.filter_list,
                             size: 18,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: _mainTabController.index == 1
+                                ? Colors
+                                      .deepPurple // Purple when selected
+                                : Colors.grey, // Grey when not selected
                           ),
-                          const Text(
+                          Text(
                             'Filters',
-                            style: TextStyle(fontSize: 9),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: _mainTabController.index == 1
+                                  ? Colors
+                                        .deepPurple // Purple when selected
+                                  : Colors.grey, // Grey when not selected
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -556,129 +572,182 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                     ),
                   ],
                   indicatorColor: Theme.of(context).colorScheme.onSurface,
-                  labelColor: Theme.of(context).colorScheme.onSurface,
-                  unselectedLabelColor: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant,
+                  // labelColor and unselectedLabelColor are set directly on Icon and Text
                 ),
-                // Conditional TabBar for filters
-                if (_mainTabController.index != 0)
-                  TabBar(
-                    controller: _filterTabController,
-                    isScrollable: true,
-                    tabs: TaskStatus.values
-                        .where((status) => status != TaskStatus.deleted)
-                        .map(
-                          (status) => Tab(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  getStatusIcon(status),
-                                  size: 18,
-                                  color: getStatusColor(
-                                    status,
-                                    currentBrightness,
+                // Conditional TabBar for filters with animation
+                AnimatedSwitcher(
+                  duration: const Duration(
+                    milliseconds: 400,
+                  ), // Adjust duration as needed
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.0, -1.0), // Slide from top
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        );
+                      },
+                  child:
+                      _mainTabController.index ==
+                          1 // Only show when "Filters" tab is selected
+                      ? TabBar(
+                          key: const ValueKey(
+                            'filterTabBar',
+                          ), // Important for AnimatedSwitcher to work
+                          controller: _filterTabController,
+                          isScrollable: true,
+                          tabs: TaskStatus.values
+                              .where((status) => status != TaskStatus.deleted)
+                              .map(
+                                (status) => Tab(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        getStatusIcon(status),
+                                        size: 18,
+                                        color: _currentFilterStatus == status
+                                            ? getStatusColor(
+                                                status,
+                                                currentBrightness,
+                                              ) // Use status color when selected
+                                            : Colors
+                                                  .grey, // Grey when not selected
+                                      ),
+                                      Text(
+                                        status.toApiString(),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: _currentFilterStatus == status
+                                              ? getStatusColor(
+                                                  status,
+                                                  currentBrightness,
+                                                ) // Use status color when selected
+                                              : Colors
+                                                    .grey, // Grey when not selected
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text(
-                                  status.toApiString(),
-                                  style: const TextStyle(fontSize: 9),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
+                              )
+                              .toList(),
+                          indicatorColor: Theme.of(
+                            context,
+                          ).colorScheme.onSurface,
+                          // labelColor and unselectedLabelColor are set directly on Icon and Text
                         )
-                        .toList(),
-                    indicatorColor: Theme.of(context).colorScheme.onSurface,
-                    labelColor: Theme.of(context).colorScheme.onSurface,
-                    unselectedLabelColor: Theme.of(
-                      context,
-                    ).colorScheme.onSurfaceVariant,
-                  ),
+                      : const SizedBox.shrink(), // Empty widget when not showing filters
+                ),
               ],
             ),
           ),
         ),
         body: Stack(
           children: [
-            TabBarView(
-              controller: _mainTabController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: [
-                // "Diary" Tab Content (All Tasks View)
-                AllTasksView(
-                  scrollTrigger: _scrollTrigger,
-                  tasksToShow: tasksToShow,
-                  tasksByPage: tasksByPage,
-                  sortedPageIds: sortedPageIds,
-                  getPageGlobalKey: _getPageGlobalKey,
-                  statusExpandedState: _statusExpandedState,
-                  currentBrightness: currentBrightness,
-                  formatDate: _formatDate,
-                  getStatusColor: getStatusColor,
-                  scrollToPageAndStatus: _scrollToPageAndStatus,
-                  pageToScrollTo: _pageToScrollTo,
-                  statusToExpand: _statusToExpand,
-                  onScrollComplete: () {
-                    setState(() {
-                      _pageToScrollTo = null;
-                      _statusToExpand = null;
-                      _isScrollingFromSearch = false;
-                    });
-                  },
-                  onScrollAndExpand: _onScrollAndExpand,
-                  expansionTileControllers: _expansionTileControllers,
-                ),
-                // "Filters" Tab Content (Status Tasks View, conditional on selected status)
-                _currentFilterStatus == null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.filter_list,
-                              size: 80,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Select a status to filter tasks',
-                              style: Theme.of(context).textTheme.titleLarge,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+            // Wrap the TabBarView content for filters with AnimatedSwitcher
+            AnimatedSwitcher(
+              duration: const Duration(
+                milliseconds: 300,
+              ), // Duration of the animation
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                // You can choose different transitions here
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: TabBarView(
+                key: ValueKey(
+                  _mainTabController.index,
+                ), // Key changes when main tab changes
+                controller: _mainTabController,
+                physics:
+                    const NeverScrollableScrollPhysics(), // Disable swiping on TabBarView directly
+                children: [
+                  // "Diary" Tab Content (All Tasks View)
+                  AllTasksView(
+                    scrollTrigger: _scrollTrigger,
+                    tasksToShow: tasksToShow,
+                    tasksByPage: tasksByPage,
+                    sortedPageIds: sortedPageIds,
+                    getPageGlobalKey: _getPageGlobalKey,
+                    statusExpandedState: _statusExpandedState,
+                    currentBrightness: currentBrightness,
+                    formatDate: _formatDate,
+                    getStatusColor: getStatusColor,
+                    scrollToPageAndStatus: _scrollToPageAndStatus,
+                    pageToScrollTo: _pageToScrollTo,
+                    statusToExpand: _statusToExpand,
+                    onScrollComplete: () {
+                      setState(() {
+                        _pageToScrollTo = null;
+                        _statusToExpand = null;
+                        _isScrollingFromSearch = false;
+                      });
+                    },
+                    onScrollAndExpand: _onScrollAndExpand,
+                    expansionTileControllers: _expansionTileControllers,
+                  ),
+                  // "Filters" Tab Content (Status Tasks View, conditional on selected status)
+                  // This is the part that will animate
+                  _currentFilterStatus == null
+                      ? Center(
+                          key: const ValueKey(
+                            'noFilterSelected',
+                          ), // Unique key for AnimatedSwitcher
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.filter_list,
+                                size: 80,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Select a status to filter tasks',
+                                style: Theme.of(context).textTheme.titleLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                      : StatusTasksView(
+                          key: ValueKey(
+                            _currentFilterStatus!.index,
+                          ), // Unique key for AnimatedSwitcher based on status
+                          tasksToShow: tasksToShow,
+                          tasksByPage: tasksByPage,
+                          sortedPageIds: sortedPageIds,
+                          getPageGlobalKey: _getPageGlobalKey,
+                          statusExpandedState: _statusExpandedState,
+                          currentBrightness: currentBrightness,
+                          formatDate: _formatDate,
+                          getStatusColor: getStatusColor,
+                          scrollToPageAndStatus: _scrollToPageAndStatus,
+                          scrollController: _scrollController,
+                          pageToScrollTo: _pageToScrollTo,
+                          statusToExpand: _statusToExpand,
+                          filterStatus: _currentFilterStatus!,
+                          onScrollComplete: () {
+                            setState(() {
+                              _pageToScrollTo = null;
+                              _statusToExpand = null;
+                              _isScrollingFromSearch = false;
+                            });
+                          },
+                          expansionTileControllers: _expansionTileControllers,
+                          onDragStarted: _handleDragStarted,
+                          onDragEnded: _handleDragEnded,
                         ),
-                      )
-                    : StatusTasksView(
-                        tasksToShow: tasksToShow,
-                        tasksByPage: tasksByPage,
-                        sortedPageIds: sortedPageIds,
-                        getPageGlobalKey: _getPageGlobalKey,
-                        statusExpandedState: _statusExpandedState,
-                        currentBrightness: currentBrightness,
-                        formatDate: _formatDate,
-                        getStatusColor: getStatusColor,
-                        scrollToPageAndStatus: _scrollToPageAndStatus,
-                        scrollController: _scrollController,
-                        pageToScrollTo: _pageToScrollTo,
-                        statusToExpand: _statusToExpand,
-                        filterStatus: _currentFilterStatus!,
-                        onScrollComplete: () {
-                          setState(() {
-                            _pageToScrollTo = null;
-                            _statusToExpand = null;
-                            _isScrollingFromSearch = false;
-                          });
-                        },
-                        expansionTileControllers: _expansionTileControllers,
-                        onDragStarted: _handleDragStarted,
-                        onDragEnded: _handleDragEnded,
-                      ),
-              ],
+                ],
+              ),
             ),
             Positioned(
               right: 16.0,

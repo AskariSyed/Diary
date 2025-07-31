@@ -87,12 +87,12 @@ Widget buildStatusDropTarget(
 
 Color getStatusColor(TaskStatus status, Brightness brightness) {
   final baseColors = {
-    TaskStatus.backlog: Colors.blueGrey,
-    TaskStatus.toDiscuss: Colors.amber,
-    TaskStatus.inProgress: Colors.deepPurple,
-    TaskStatus.onHold: Colors.red,
-    TaskStatus.complete: Colors.green,
-    TaskStatus.toFollowUp: Colors.teal,
+    TaskStatus.backlog: const Color.fromARGB(255, 177, 107, 107),
+    TaskStatus.toDiscuss: const Color.fromARGB(255, 222, 184, 70),
+    TaskStatus.inProgress: const Color.fromARGB(255, 113, 85, 161),
+    TaskStatus.onHold: const Color.fromARGB(255, 192, 87, 198),
+    TaskStatus.complete: const Color.fromARGB(255, 169, 215, 171),
+    TaskStatus.toFollowUp: const Color.fromARGB(255, 124, 196, 189),
   };
 
   final baseColor = baseColors[status] ?? Colors.grey;
