@@ -89,7 +89,8 @@ class _PageListItemState extends State<PageListItem> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      // HERE IS THE CHANGE:
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const Spacer(),
