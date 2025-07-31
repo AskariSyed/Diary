@@ -430,6 +430,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       length: 2, // 'Diary' and 'Filters'
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.white,
           title: _isSearching
               ? TextField(
                   controller: _searchController,
