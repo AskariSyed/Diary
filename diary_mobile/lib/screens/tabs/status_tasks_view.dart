@@ -12,6 +12,9 @@ import 'package:intl/intl.dart';
 enum _TaskCountFilter { top3, top5, top10, all }
 
 class StatusTasksView extends StatefulWidget {
+  // The wantKeepAlive getter should be in the State class, not here.
+  // bool get wantKeepAlive => true; // REMOVE THIS LINE from StatefulWidget
+
   final List<TaskDto> tasksToShow;
   final Map<int, List<TaskDto>> tasksByPage;
   final List<int> sortedPageIds;
@@ -58,8 +61,8 @@ class StatusTasksView extends StatefulWidget {
 }
 
 class _StatusTasksViewState extends State<StatusTasksView>
-    with SingleTickerProviderStateMixin {
-  // Added SingleTickerProviderStateMixin for AnimationController
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  // Added AutomaticKeepAliveClientMixin
   // State variable for the selected filter
   _TaskCountFilter _selectedFilter = _TaskCountFilter.all;
 
@@ -67,6 +70,9 @@ class _StatusTasksViewState extends State<StatusTasksView>
   late AnimationController _animationController;
   // Animation for the slide transition
   late Animation<Offset> _slideAnimation;
+
+  @override
+  bool get wantKeepAlive => true; // Moved wantKeepAlive here
 
   @override
   void initState() {
@@ -152,6 +158,8 @@ class _StatusTasksViewState extends State<StatusTasksView>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     final taskProvider = Provider.of<TaskProvider>(context);
 
     final Map<int, TaskDto> mostRecentTasksMap = {};
@@ -354,8 +362,7 @@ class _StatusTasksViewState extends State<StatusTasksView>
                         .onDragStarted(); // Notify parent that dragging has started
                   },
                   onDragEnd: (details) {
-                    widget
-                        .onDragEnded(); // Notify parent that dragging has ended
+                    widget.onDragEnded();
                   },
                   child: Card(
                     margin: const EdgeInsets.symmetric(
@@ -366,14 +373,7 @@ class _StatusTasksViewState extends State<StatusTasksView>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ListTile(
-                          title: Text(
-                            task.title,
-                            style: TextStyle(
-                              decoration: task.status == TaskStatus.complete
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
+                          title: Text(task.title, style: const TextStyle()),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

@@ -674,7 +674,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                     tasksToShow: tasksToShow,
                     tasksByPage: tasksByPage,
                     sortedPageIds: sortedPageIds,
-                    getPageGlobalKey: _getPageGlobalKey,
+                    // getPageGlobalKey: _getPageGlobalKey,
                     statusExpandedState: _statusExpandedState,
                     currentBrightness: currentBrightness,
                     formatDate: _formatDate,

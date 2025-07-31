@@ -24,7 +24,8 @@ class AllTasksView extends StatefulWidget {
   final List<TaskDto> tasksToShow;
   final Map<int, List<TaskDto>> tasksByPage;
   final List<int> sortedPageIds;
-  final GlobalKey Function(String viewPrefix, int pageId) getPageGlobalKey;
+  // REMOVED: The getPageGlobalKey parameter is no longer needed and was the source of the error.
+  // final GlobalKey Function(String viewPrefix, int pageId) getPageGlobalKey;
   final Map<String, bool> statusExpandedState;
   final Brightness currentBrightness;
   final String Function(DateTime?) formatDate;
@@ -42,7 +43,7 @@ class AllTasksView extends StatefulWidget {
     required this.tasksToShow,
     required this.tasksByPage,
     required this.sortedPageIds,
-    required this.getPageGlobalKey,
+    // required this.getPageGlobalKey, // REMOVED
     required this.statusExpandedState,
     required this.currentBrightness,
     required this.formatDate,
@@ -60,7 +61,8 @@ class AllTasksView extends StatefulWidget {
   State<AllTasksView> createState() => _AllTasksViewState();
 }
 
-class _AllTasksViewState extends State<AllTasksView> {
+class _AllTasksViewState extends State<AllTasksView>
+    with AutomaticKeepAliveClientMixin {
   late PageController _pageController;
   late ScrollController _pageIndicatorScrollController;
   int _currentPageIndex = 0;
@@ -75,6 +77,9 @@ class _AllTasksViewState extends State<AllTasksView> {
       _kSelectedIndicatorWidth + (_kHorizontalMargin * 2);
   double get _effectiveUnselectedIndicatorTotalWidth =>
       _kUnselectedIndicatorWidth + (_kHorizontalMargin * 2);
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -195,6 +200,7 @@ class _AllTasksViewState extends State<AllTasksView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final int? mostRecentPageId = widget.sortedPageIds.isNotEmpty
         ? widget.sortedPageIds.first
         : null;
@@ -255,7 +261,10 @@ class _AllTasksViewState extends State<AllTasksView> {
                             0,
                           ),
                           child: PageListItem(
-                            key: widget.getPageGlobalKey('all_tasks', pageId),
+                            // FIX: Replaced the problematic GlobalKey with a ValueKey.
+                            // This correctly identifies the page for Flutter's build algorithm
+                            // without causing duplicate key errors.
+                            key: ValueKey('all_tasks-$pageId'),
                             pageId: pageId,
                             formatDate: widget.formatDate,
                             currentPageTasks: currentPageTasks,
@@ -264,6 +273,7 @@ class _AllTasksViewState extends State<AllTasksView> {
                             statusExpandedState: widget.statusExpandedState,
                             currentBrightness: widget.currentBrightness,
                             statusToExpand: widget.statusToExpand,
+                            // Pass the expansionTileControllers map down
                           ),
                         ),
                       ),
