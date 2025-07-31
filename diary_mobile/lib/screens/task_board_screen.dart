@@ -1,4 +1,6 @@
 // lib/screens/task_board_screen.dart
+import 'dart:ui';
+
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
 import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/screens/build_empty_state.dart';
@@ -837,26 +839,47 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 ),
               ),
             if (_isFiltering && _filteredTasks.isEmpty)
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              Positioned.fill(
+                child: Stack(
                   children: [
-                    Icon(
-                      Icons.search_off,
-                      size: 80,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    // Blur the background
+                    BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+                      child: Container(
+                        color: const Color.fromARGB(
+                          255,
+                          0,
+                          0,
+                          0,
+                        ).withOpacity(0.3),
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No tasks found for "${_searchController.text}"',
-                      style: Theme.of(context).textTheme.titleLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _clearSearch,
-                      icon: const Icon(Icons.clear),
-                      label: const Text('Clear Search'),
+
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 80,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No tasks found for "${_searchController.text}"',
+                            style: Theme.of(context).textTheme.titleLarge,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _clearSearch,
+                            icon: const Icon(Icons.clear),
+                            label: const Text('Clear Search'),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

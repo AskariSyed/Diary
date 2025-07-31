@@ -150,6 +150,90 @@ namespace DiaryApi.Controllers
                 page.DiaryNo
             });
         }
+
+
+
+//        [HttpPost("copy-tasks")]
+//        public async Task<IActionResult> CopyTasks([FromBody] CopyTasksDto copyDto)
+//        {
+//            if (!ModelState.IsValid)
+//            {
+//                return BadRequest(ModelState);
+//            }
+
+//            try
+//            {
+//                Console.WriteLine($"The source date is {copyDto.SourcePageDate} and target is {copyDto.TargetPageDate}");
+//                var sourcePage = await _context.Pages
+//                    .FirstOrDefaultAsync(p => p.PageDate.Date == copyDto.SourcePageDate.Date && p.DiaryNo == 1);
+//                if (sourcePage == null)
+//                {
+//                    return NotFound($"Source page for date {copyDto.SourcePageDate.ToShortDateString()} not found for Diary ID {1}.");
+//                }
+
+//                var targetPage = await _context.Pages
+//                    .FirstOrDefaultAsync(p => p.PageDate.Date == copyDto.TargetPageDate.Date && p.DiaryNo == 1);
+
+//                // If target page does not exist, create it (as per previous logic for creating new pages for today)
+//                if (targetPage == null)
+//                {
+//                    targetPage = new Page
+//                    {
+//                        DiaryNo = 1,
+//                        PageDate = copyDto.TargetPageDate.Date, // Store only date part
+
+//                    };
+//                    _context.Pages.Add(targetPage);
+//                    await _context.SaveChangesAsync(); // Save to get the new targetPage.PageId
+//                }
+
+//                // Fetch tasks from the source page that are not 'Completed' or 'Deleted'
+//                // Assuming your PageTask model has a 'Status' property that can be compared to strings
+//                var tasksToCopy = await _context.PageTasks
+//                    .Where(pt => pt.PageId == sourcePage.PageId &&
+//                                 pt.Status.ToLower() != "completed" && // Case-insensitive comparison
+//                                 pt.Status.ToLower() != "deleted")
+//                    .AsNoTracking() // Use AsNoTracking for efficiency if you're not modifying them
+//                    .ToListAsync();
+
+//                if (!tasksToCopy.Any())
+//                {
+//                    return Ok("No uncompleted/undeleted tasks found to copy from the source page.");
+//                }
+
+//                foreach (var task in tasksToCopy)
+//                {
+
+//                    var existingTask = await _context.PageTasks
+//                        .AnyAsync(pt => pt.PageId == targetPage.PageId &&
+//                                        pt.Title == task.Title &&
+//                                        pt.Status == task.Status); // Consider if status should be part of uniqueness
+
+//                    if (!existingTask)
+//                    {
+//                        var newPageTask = new PageTask
+//                        {
+//                            PageId = targetPage.PageId,
+//                            Title = task.Title,
+//                            Status = task.Status,
+//                            ParentTaskId = task.ParentTaskId,
+//                        };
+//                        _context.PageTasks.Add(newPageTask);
+//                    }
+//                }
+
+//                await _context.SaveChangesAsync();
+
+//                return Ok($"Successfully copied {tasksToCopy.Count} uncompleted/undeleted tasks from {sourcePage.PageDate.ToShortDateString()} to {targetPage.PageDate.ToShortDateString()}.");
+//            }
+//            catch (Exception ex)
+//            {
+
+//                return StatusCode(500, $"Internal server error: {ex.Message}");
+//            }
+//        }
+    
+//}
         [HttpPost("copy-tasks")]
         public async Task<IActionResult> CopyTasks([FromBody] CopyTasksDto copyDto)
         {
@@ -200,24 +284,31 @@ namespace DiaryApi.Controllers
 
                 foreach (var task in tasksToCopy)
                 {
-                    
                     var existingTask = await _context.PageTasks
-                        .AnyAsync(pt => pt.PageId == targetPage.PageId &&
-                                        pt.Title == task.Title &&
-                                        pt.Status == task.Status); // Consider if status should be part of uniqueness
+                        .FirstOrDefaultAsync(pt => pt.PageId == targetPage.PageId &&
+                                                   pt.ParentTaskId == task.ParentTaskId &&
+                                                   pt.ParentTaskId != null); // Only consider tasks with a ParentTaskId
 
-                    if (!existingTask)
+                    if (existingTask != null)
                     {
+                        
+                        existingTask.Status = task.Status;
+                        _context.PageTasks.Update(existingTask);
+                    }
+                    else
+                    {
+                        
                         var newPageTask = new PageTask
                         {
                             PageId = targetPage.PageId,
                             Title = task.Title,
                             Status = task.Status,
-                            ParentTaskId = task.ParentTaskId, 
+                            ParentTaskId = task.ParentTaskId,
                         };
                         _context.PageTasks.Add(newPageTask);
                     }
                 }
+
 
                 await _context.SaveChangesAsync();
 
