@@ -49,15 +49,7 @@ void showAddTaskDialog(BuildContext context) {
                         today.day,
                       );
 
-                      if (pickedDate.isBefore(currentDate)) {
-                        scaffoldMessenger.showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Cannot select a past date. Please pick today or a future date.',
-                            ),
-                          ),
-                        );
-                      } else {
+                      {
                         setState(() {
                           selectedDate = picked;
                         });
@@ -79,12 +71,21 @@ void showAddTaskDialog(BuildContext context) {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (taskTitleController.text.isEmpty) {
+                  if (taskTitleController.text.trim().isEmpty) {
                     scaffoldMessenger.showSnackBar(
                       const SnackBar(
                         content: Text('Task title cannot be empty.'),
                       ),
                     );
+                  } else if (taskTitleController.text.length > 255) {
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Task title cannot exceed 255 characters.',
+                        ),
+                      ),
+                    );
+
                     return;
                   }
 
@@ -97,7 +98,6 @@ void showAddTaskDialog(BuildContext context) {
                     return;
                   }
 
-                  // Check again here to prevent older date submission
                   final today = DateTime.now();
                   final pickedDate = DateTime(
                     selectedDate!.year,
@@ -109,15 +109,6 @@ void showAddTaskDialog(BuildContext context) {
                     today.month,
                     today.day,
                   );
-
-                  if (pickedDate.isBefore(currentDate)) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Cannot add task for past dates.'),
-                      ),
-                    );
-                    return;
-                  }
 
                   try {
                     final taskProvider = Provider.of<TaskProvider>(

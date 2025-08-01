@@ -288,7 +288,7 @@ class _PageListItemState extends State<PageListItem> {
                               ),
                               child: ExpansionTile(
                                 title: Text(
-                                  '${status.toApiString()} (${tasksInStatus.length})',
+                                  '${status.toApiString().toUpperCase()} (${tasksInStatus.length})',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),

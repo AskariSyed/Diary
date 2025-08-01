@@ -65,7 +65,7 @@ class _AllTasksViewState extends State<AllTasksView>
   late ScrollController _pageIndicatorScrollController;
   int _currentPageIndex = 0;
   static const double _kPageIndicatorHeight = 60.0;
-  static const double _kVisibleIndicatorBarWidth = 170.0;
+  static const double _kVisibleIndicatorBarWidth = 150.0;
   bool _isAnimatingPageController = false;
   bool _isAnimatingIndicatorController = false;
   static const double _kSelectedIndicatorWidth = 50.0;
