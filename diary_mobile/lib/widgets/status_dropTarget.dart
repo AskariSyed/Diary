@@ -2,6 +2,8 @@ import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 Widget buildStatusDropTarget(
   BuildContext context,
@@ -15,35 +17,19 @@ Widget buildStatusDropTarget(
     },
     onAcceptWithDetails: (details) async {
       final draggedTask = details.data;
-
-      // Crucially, get the ScaffoldMessengerState *before* the async operation.
-      // This ensures you have a stable reference, even if the context becomes invalid.
-      final scaffoldMessenger = ScaffoldMessenger.of(context);
-      // You can also capture the context, but the messenger state is more direct
-      // for showing snackbars reliably.
-      final initialContext = context; // Keep this for the mounted check
-
+      final overlay = Overlay.of(context);
       try {
-        final response = await taskProvider.updateTaskStatusForTodayPage(
-          draggedTask.id,
-          status,
+        await taskProvider.updateTaskStatusForTodayPage(draggedTask.id, status);
+        showTopSnackBar(
+          overlay,
+          CustomSnackBar.success(message: 'Status updated'),
+          displayDuration: Durations.short1,
         );
-
-        // Check if the initial context is still mounted before using the messenger
-        // This is a belt-and-suspenders approach for maximum safety.
-        if (!initialContext.mounted) {
-          return; // If the widget is no longer in the tree, do nothing.
-        }
-
-        final message = response?['message'] ?? 'Task status updated.';
-
-        scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
       } catch (e) {
-        if (!initialContext.mounted) {
-          return;
-        }
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text('Failed to update task status: $e')),
+        showTopSnackBar(
+          overlay,
+          CustomSnackBar.error(message: 'Failed to update task status: $e'),
+          displayDuration: const Duration(seconds: 2),
         );
       }
     },
@@ -108,6 +94,7 @@ Color getStatusColor(TaskStatus status, Brightness brightness) {
     TaskStatus.onHold: const Color.fromARGB(255, 207, 65, 65),
     TaskStatus.complete: const Color.fromARGB(255, 117, 217, 122),
     TaskStatus.toFollowUp: const Color.fromARGB(255, 124, 196, 189),
+    TaskStatus.deleted: const Color.fromARGB(255, 251, 0, 0),
   };
 
   final darkColors = {
@@ -117,6 +104,7 @@ Color getStatusColor(TaskStatus status, Brightness brightness) {
     TaskStatus.onHold: const Color.fromARGB(255, 230, 135, 235),
     TaskStatus.complete: const Color.fromARGB(255, 77, 212, 77),
     TaskStatus.toFollowUp: const Color.fromARGB(255, 60, 218, 208),
+    TaskStatus.deleted: const Color.fromARGB(255, 251, 0, 0),
   };
 
   final isDark = brightness == Brightness.dark;

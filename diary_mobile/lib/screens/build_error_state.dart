@@ -97,11 +97,7 @@ class _ErrorStateScreenState extends State<ErrorStateScreen>
           IconButton(
             icon: const Icon(Icons.note_add),
             tooltip: 'Add New Page',
-            onPressed: () => showAddPageDialog(
-              context,
-              widget.taskProvider,
-              widget.scrollToPageId,
-            ),
+            onPressed: () => showAddPageDialog(context, widget.taskProvider),
           ),
           IconButton(
             icon: Icon(

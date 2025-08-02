@@ -1,12 +1,12 @@
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 void showAddTaskDialog(BuildContext context) {
   final TextEditingController taskTitleController = TextEditingController();
-  DateTime? selectedDate;
+  DateTime selectedDate = DateTime.now();
 
   showDialog(
     context: context,
@@ -26,40 +26,53 @@ void showAddTaskDialog(BuildContext context) {
                   decoration: const InputDecoration(labelText: 'Task Title'),
                   autofocus: true,
                 ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () async {
-                    DateTime? picked = await showDatePicker(
+                const SizedBox(height: 20),
+
+                // --- Improved Date Picker UI ---
+                InkWell(
+                  onTap: () async {
+                    final DateTime? picked = await showDatePicker(
                       context: context,
-                      initialDate: DateTime.now(),
+                      initialDate:
+                          selectedDate, // Start with the current selection
                       firstDate: DateTime(2020),
                       lastDate: DateTime(2100),
                     );
 
-                    if (picked != null) {
-                      final today = DateTime.now();
-                      final pickedDate = DateTime(
-                        picked.year,
-                        picked.month,
-                        picked.day,
-                      );
-                      final currentDate = DateTime(
-                        today.year,
-                        today.month,
-                        today.day,
-                      );
-
-                      {
-                        setState(() {
-                          selectedDate = picked;
-                        });
-                      }
+                    if (picked != null && picked != selectedDate) {
+                      setState(() {
+                        selectedDate = picked;
+                      });
                     }
                   },
-                  child: Text(
-                    selectedDate == null
-                        ? 'Pick Task Date'
-                        : 'Date: ${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_month_outlined,
+                              color: Colors.blue,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              DateFormat('MMMM d, yyyy').format(selectedDate),
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -77,7 +90,10 @@ void showAddTaskDialog(BuildContext context) {
                         content: Text('Task title cannot be empty.'),
                       ),
                     );
-                  } else if (taskTitleController.text.length > 255) {
+                    return;
+                  }
+
+                  if (taskTitleController.text.length > 255) {
                     scaffoldMessenger.showSnackBar(
                       const SnackBar(
                         content: Text(
@@ -85,30 +101,8 @@ void showAddTaskDialog(BuildContext context) {
                         ),
                       ),
                     );
-
                     return;
                   }
-
-                  if (selectedDate == null) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Please pick a date first.'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  final today = DateTime.now();
-                  final pickedDate = DateTime(
-                    selectedDate!.year,
-                    selectedDate!.month,
-                    selectedDate!.day,
-                  );
-                  final currentDate = DateTime(
-                    today.year,
-                    today.month,
-                    today.day,
-                  );
 
                   try {
                     final taskProvider = Provider.of<TaskProvider>(
@@ -117,9 +111,10 @@ void showAddTaskDialog(BuildContext context) {
                     );
 
                     int? pageId = await taskProvider.getPagebyDate(
-                      1,
-                      selectedDate!,
+                      1, // Assuming diaryId is 1
+                      selectedDate,
                     );
+
                     if (pageId == null) {
                       scaffoldMessenger.showSnackBar(
                         const SnackBar(
@@ -130,7 +125,7 @@ void showAddTaskDialog(BuildContext context) {
                     }
 
                     await taskProvider.addTask(
-                      taskTitleController.text,
+                      taskTitleController.text.trim(),
                       TaskStatus.backlog,
                       pageId: pageId,
                     );

@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\controllers\\pagescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:controllers\\pagescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\controllers\\taskscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:controllers\\taskscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\controllers\\pagescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|solutionrelative:controllers\\pagescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A5A8C81A-04AC-424D-A308-7E4C2F87D65B}|DiaryApi.csproj|c:\\users\\hp\\source\\repos\\diary\\diaryapi\\dtos\\dto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -70,7 +70,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Bookmark",
@@ -78,37 +78,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": ".gitignore",
-              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\.gitignore",
-              "RelativeDocumentMoniker": ".gitignore",
-              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\.gitignore",
-              "RelativeToolTip": ".gitignore",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-07-28T15:41:30.201Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "Properties\\launchSettings.json",
-              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Properties\\launchSettings.json",
-              "RelativeToolTip": "Properties\\launchSettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAfAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-07-28T06:00:37.851Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "PagesController.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\PagesController.cs",
               "RelativeDocumentMoniker": "Controllers\\PagesController.cs",
               "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\PagesController.cs",
               "RelativeToolTip": "Controllers\\PagesController.cs",
-              "ViewState": "AgIAAGAAAAAAAAAAAADwv3AAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAAH4AAAAAAAAAAAAowC0AAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-26T08:27:58.967Z",
               "EditorCaption": ""
@@ -163,16 +139,40 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "TasksController.cs",
               "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\TasksController.cs",
               "RelativeDocumentMoniker": "Controllers\\TasksController.cs",
               "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\TasksController.cs",
               "RelativeToolTip": "Controllers\\TasksController.cs",
-              "ViewState": "AgIAAFQAAAAAAAAAAAAwwF0AAAAfAAAAAAAAAA==",
+              "ViewState": "AgIAABUBAAAAAAAAAAAgwCkBAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-26T08:28:10.377Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Properties\\launchSettings.json",
+              "RelativeToolTip": "Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-07-28T06:00:37.851Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": ".gitignore",
+              "DocumentMoniker": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\.gitignore",
+              "RelativeDocumentMoniker": ".gitignore",
+              "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\.gitignore",
+              "RelativeToolTip": ".gitignore",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-07-28T15:41:30.201Z"
             },
             {
               "$type": "Document",

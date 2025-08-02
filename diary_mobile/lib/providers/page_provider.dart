@@ -9,7 +9,9 @@ class PageProvider with ChangeNotifier {
   List<PageDto> _pages = [];
   bool _isLoading = false;
   String? _errorMessage;
-
+  PageProvider() {
+    fetchPagesByDiary(1);
+  }
   List<PageDto> get pages => _pages;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -21,21 +23,14 @@ class PageProvider with ChangeNotifier {
 
     try {
       final url = Uri.parse('$_baseUrl/by-diary/$diaryId');
-      print('[DEBUG] Fetching pages from: $url');
 
       final response = await http.get(url);
-
-      print('[DEBUG] Response status: ${response.statusCode}');
-      print('[DEBUG] Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
 
         _pages = data.map((json) {
           final page = PageDto.fromJson(json);
-          print(
-            '[DEBUG] Mapped PageDto: id=${page.pageId}, date=${page.pageDate}',
-          );
+
           return page;
         }).toList();
 
@@ -56,13 +51,10 @@ class PageProvider with ChangeNotifier {
   }
 
   DateTime? getPageDateById(int pageId) {
-    print('[DEBUG] Looking for page with ID: $pageId');
-
     try {
       final page = _pages.firstWhere(
         (p) => p.pageId == pageId,
         orElse: () {
-          print('[WARNING] No page found with ID: $pageId');
           return PageDto(pageId: -1, diaryNo: -1, pageDate: DateTime.now());
         },
       );
@@ -71,23 +63,16 @@ class PageProvider with ChangeNotifier {
         return null;
       }
 
-      print(
-        '[DEBUG] Found page with ID: ${page.pageId}, Date: ${page.pageDate}',
-      );
       return page.pageDate;
     } catch (e) {
-      print('[EXCEPTION] Error finding page by ID: $e');
       return null;
     }
   }
 
   void printAllPageIdsWithDates() {
     if (_pages.isEmpty) {
-      print('[INFO] No pages available to print.');
       return;
     }
-
-    print('[INFO] Printing all page IDs with their dates:');
     for (final page in _pages) {
       print('Page ID: ${page.pageId}, Date: ${page.pageDate}');
     }

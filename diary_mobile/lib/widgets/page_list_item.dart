@@ -5,6 +5,8 @@ import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:diary_mobile/widgets/task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class PageListItem extends StatefulWidget {
   final int pageId;
@@ -130,10 +132,10 @@ class _PageListItemState extends State<PageListItem> {
   ) async {
     if (targetPageDate == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error: Target page date is not available.'),
-          backgroundColor: Colors.red,
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.error(
+          message: 'Error: Target page date is not available.',
         ),
       );
       return;
@@ -156,10 +158,10 @@ class _PageListItemState extends State<PageListItem> {
 
     if (selectedSourceDate.isAtSameMomentAs(cleanTargetDate)) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot copy tasks to the same day.'),
-          backgroundColor: Colors.orange,
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.info(
+          message: 'Cannot copy tasks to the same day.',
         ),
       );
       return;
@@ -195,22 +197,19 @@ class _PageListItemState extends State<PageListItem> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Tasks successfully copied from ${widget.formatDate(selectedSourceDate)}!',
-          ),
-          backgroundColor: Colors.green,
+      showTopSnackBar(
+        Overlay.of(context),
+        CustomSnackBar.success(
+          message:
+              'Tasks successfully copied from ${widget.formatDate(selectedSourceDate)}!',
         ),
       );
       taskProvider.fetchTasks();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to copy tasks: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
+      showTopSnackBar(
+        Overlay.of(context),
+        CustomSnackBar.error(message: 'Failed to copy tasks: ${e.toString()}'),
       );
     }
   }
@@ -265,16 +264,23 @@ class _PageListItemState extends State<PageListItem> {
                                 context,
                                 listen: false,
                               ).updateTaskStatus(draggedTask.id, status);
+
+                              if (!mounted) return;
+                              showTopSnackBar(
+                                Overlay.of(context),
+                                CustomSnackBar.success(
+                                  message:
+                                      'Task "${draggedTask.title}" moved to ${status.toApiString()}!',
+                                ),
+                              );
                             } catch (e) {
-                              Future.microtask(() {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Failed to update task status: $e',
-                                    ),
-                                  ),
-                                );
-                              });
+                              if (!mounted) return;
+                              showTopSnackBar(
+                                Overlay.of(context),
+                                CustomSnackBar.error(
+                                  message: 'Failed to update task status: $e',
+                                ),
+                              );
                             }
                           },
                           builder: (context, candidateData, rejectedData) {

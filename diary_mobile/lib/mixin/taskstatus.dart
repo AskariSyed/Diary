@@ -14,38 +14,38 @@ extension TaskStatusExtension on TaskStatus {
   String toApiString() {
     switch (this) {
       case TaskStatus.backlog:
-        return 'backlog';
+        return 'Backlog';
       case TaskStatus.toDiscuss:
         return 'To Discuss';
       case TaskStatus.inProgress:
-        return 'in process';
+        return 'In Process';
       case TaskStatus.onHold:
-        return 'on hold';
+        return 'On Hold';
       case TaskStatus.toFollowUp:
-        return 'To follow up';
+        return 'To Follow Up';
       case TaskStatus.complete:
-        return 'completed';
+        return 'Completed';
       case TaskStatus.deleted:
-        return 'deleted';
+        return 'Deleted';
     }
   }
 
   // A static method to create from a string
   static TaskStatus fromApiString(String statusString) {
-    switch (statusString.toLowerCase()) {
-      case 'backlog':
+    switch (statusString) {
+      case 'Backlog':
         return TaskStatus.backlog;
-      case 'to discuss':
+      case 'To Discuss':
         return TaskStatus.toDiscuss;
-      case 'in process':
+      case 'In Process':
         return TaskStatus.inProgress;
-      case 'on hold':
+      case 'On Hold':
         return TaskStatus.onHold;
-      case 'to follow up':
+      case 'To Follow Up':
         return TaskStatus.toFollowUp;
-      case 'completed':
+      case 'Completed':
         return TaskStatus.complete;
-      case 'deleted':
+      case 'Deleted':
         return TaskStatus.deleted;
 
       default:

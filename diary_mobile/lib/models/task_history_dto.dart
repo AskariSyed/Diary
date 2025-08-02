@@ -4,6 +4,7 @@ class TaskHistoryDto {
   final DateTime pageDate;
   final String title;
   final String status;
+  final DateTime? parentTaskCreatedAt; // New field
 
   TaskHistoryDto({
     required this.pageTaskId,
@@ -11,6 +12,7 @@ class TaskHistoryDto {
     required this.pageDate,
     required this.title,
     required this.status,
+    this.parentTaskCreatedAt, // Include in constructor
   });
 
   factory TaskHistoryDto.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,9 @@ class TaskHistoryDto {
       pageDate: DateTime.parse(json['pageDate']),
       title: json['title'],
       status: json['status'],
+      parentTaskCreatedAt: json['parentTaskCreatedAt'] != null
+          ? DateTime.parse(json['parentTaskCreatedAt'])
+          : null, // Parse new field
     );
   }
 }

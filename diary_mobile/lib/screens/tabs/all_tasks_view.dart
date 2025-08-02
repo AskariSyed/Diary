@@ -21,6 +21,7 @@ class AllTasksView extends StatefulWidget {
   final int scrollTrigger;
   final Function(int pageId, TaskStatus status) onScrollAndExpand;
   final Map<String, dynamic> expansionTileControllers;
+  final Map<int, DateTime?> pageDatesById;
 
   const AllTasksView({
     super.key,
@@ -39,6 +40,7 @@ class AllTasksView extends StatefulWidget {
     required this.onScrollAndExpand,
     required this.expansionTileControllers,
     required this.allTasks,
+    required this.pageDatesById,
   });
 
   @override
@@ -143,9 +145,8 @@ class _AllTasksViewState extends State<AllTasksView>
   int? _findTodaysPageId() {
     final today = DateTime.now();
     for (final pageId in widget.sortedPageIds) {
-      final pageDate = widget.tasksByPage[pageId]?.isNotEmpty == true
-          ? widget.tasksByPage[pageId]![0].pageDate
-          : null;
+      final pageDate = widget.pageDatesById[pageId];
+
       if (pageDate != null &&
           pageDate.year == today.year &&
           pageDate.month == today.month &&
@@ -176,10 +177,8 @@ class _AllTasksViewState extends State<AllTasksView>
                   itemCount: widget.sortedPageIds.length,
                   itemBuilder: (context, index) {
                     final pageId = widget.sortedPageIds[index];
-                    final pageDate =
-                        widget.tasksByPage[pageId]?.isNotEmpty == true
-                        ? widget.tasksByPage[pageId]![0].pageDate
-                        : null;
+                    final DateTime? pageDate = widget.pageDatesById[pageId];
+
                     return ListTile(
                       title: Text(
                         pageDate != null
@@ -399,10 +398,7 @@ class _AllTasksViewState extends State<AllTasksView>
                     itemBuilder: (context, index) {
                       bool isSelected = _currentPageIndex == index;
                       final int pageId = widget.sortedPageIds[index];
-                      final DateTime? pageDate =
-                          widget.tasksByPage[pageId]?.isNotEmpty == true
-                          ? widget.tasksByPage[pageId]![0].pageDate
-                          : null;
+                      final DateTime? pageDate = widget.pageDatesById[pageId];
 
                       return GestureDetector(
                         onTap: () {

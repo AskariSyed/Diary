@@ -76,6 +76,7 @@ namespace DiaryApi.Dtos
         public DateTime PageDate { get; set; }
         public string Title { get; set; }
         public string Status { get; set; }
+        public DateTime ParentTaskCreatedAt { get; set; }
     }
   
 public class CopyTasksDto

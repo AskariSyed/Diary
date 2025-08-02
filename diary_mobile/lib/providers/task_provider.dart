@@ -1,3 +1,4 @@
+// task_provider.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -6,15 +7,22 @@ import '/models/task_dto.dart';
 import '/mixin/taskstatus.dart';
 import '/models/create_page_dto.dart';
 import '../models/task_history_dto.dart';
+import 'package:diary_mobile/providers/page_provider.dart'; // Import PageProvider
 
 class TaskProvider with ChangeNotifier {
   List<TaskDto> _tasks = [];
   bool _isLoading = false;
   String? _errorMessage;
 
+  PageProvider? _pageProvider; // Add a field for PageProvider
+
+  // Setter for PageProvider
+  set pageProvider(PageProvider? provider) {
+    _pageProvider = provider;
+  }
+
   final String _tasksBaseUrl = 'http://192.168.137.1:5158/api/Tasks';
-  final String _pagesBaseUrl =
-      'http://192.168.137.1:5158/api/Pages'; // Keep this as 'Tasks'
+  final String _pagesBaseUrl = 'http://192.168.137.1:5158/api/Pages';
 
   List<TaskDto> get tasks => _tasks;
   bool get isLoading => _isLoading;
@@ -263,6 +271,12 @@ class TaskProvider with ChangeNotifier {
         final Map<String, dynamic> responseData = json.decode(response.body);
         newPageId = responseData['pageId'] as int;
         await fetchTasks();
+        if (_pageProvider != null) {
+          await _pageProvider!.fetchPagesByDiary(
+            diaryNo,
+          ); // Ensure this is awaited
+        }
+        notifyListeners(); // <-- NEW LINE: Notify TaskProvider listeners again after PageProvider updates
       } else {
         String errorMessage = 'Failed to create new page.';
         if (response.statusCode == 404) {
@@ -275,7 +289,6 @@ class TaskProvider with ChangeNotifier {
               'Server responded with status ${response.statusCode}. Body: ${response.body}';
         }
         _setErrorMessage(errorMessage);
-        // You can optionally throw or just return -1
         return -1;
       }
     } catch (e) {
@@ -303,7 +316,6 @@ class TaskProvider with ChangeNotifier {
     final currentMostRecent = getCurrentMostRecentPageId();
     return currentMostRecent ?? 1;
   }
-  // At the top of TaskProvider file
 
   Future<List<TaskHistoryDto>> getTaskHistoryByParentId(
     int parentTaskId,
@@ -400,7 +412,6 @@ class TaskProvider with ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         await fetchTasks();
-        // Try to parse and return message if response has a body
         if (response.body.isNotEmpty) {
           print(response.body.toString());
           return json.decode(response.body) as Map<String, dynamic>;
@@ -459,38 +470,24 @@ class TaskProvider with ChangeNotifier {
         );
       }
 
-      // VVVV MODIFIED CODE STARTS HERE VVVV
-      // Check if the response body is not empty and is valid JSON before decoding
-      String successMessage =
-          "Tasks copied successfully!"; // Default success message
+      String successMessage = "Tasks copied successfully!";
       try {
-        // Attempt to decode, but catch the FormatException if it's not JSON
         final dynamic decodedResponse = json.decode(response.body);
         if (decodedResponse is Map && decodedResponse.containsKey('message')) {
           successMessage = decodedResponse['message'];
         } else if (decodedResponse is String) {
-          // If the backend happens to send a JSON string, extract it
           successMessage = decodedResponse;
         }
-        // If it's just a plain string (like your backend sends), this will fail,
-        // and we'll fall to the outer catch if the try-catch for decoding wasn't here.
-        // However, for this specific case, we just use response.body directly for success message.
       } on FormatException {
-        // This catches the exact error you were getting.
-        // If it's not JSON, we assume the whole body is the success message.
         successMessage = response.body;
       } catch (e) {
-        // Catch any other unexpected errors during parsing
         print(
           'Warning: Could not parse response body as JSON. Using raw body. Error: $e',
         );
         successMessage = response.body;
       }
 
-      print(
-        'Copy tasks successful: $successMessage',
-      ); // Use the message we've extracted
-      // ^^^^ MODIFIED CODE ENDS HERE ^^^^
+      print('Copy tasks successful: $successMessage');
 
       await fetchTasks();
     } catch (e) {

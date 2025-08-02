@@ -16,8 +16,7 @@ class page_view_builder extends StatelessWidget {
 
   final PageController _pageController;
   final AllTasksView widget;
-  final ValueChanged<int> onPageChanged; // <-- add this field
-
+  final ValueChanged<int> onPageChanged;
   @override
   Widget build(BuildContext context) {
     return PageView.builder(
@@ -30,9 +29,7 @@ class page_view_builder extends StatelessWidget {
         final List<TaskDto> currentPageTasks = allPageTasks
             .where((t) => t.status != TaskStatus.deleted)
             .toList();
-        final DateTime? pageDate = allPageTasks.isNotEmpty
-            ? allPageTasks[0].pageDate
-            : null;
+        final DateTime? pageDate = widget.pageDatesById[pageId];
         final bool isMostRecentPage =
             pageId ==
             (widget.sortedPageIds.isNotEmpty
@@ -53,7 +50,7 @@ class page_view_builder extends StatelessWidget {
               num clampedOffset = pageOffset.clamp(-1.0, 1.0);
 
               if (clampedOffset.abs() > 0.001) {
-                rotationY = clampedOffset * (M.pi); // rotate max 180°
+                rotationY = clampedOffset * (M.pi);
               } else {
                 rotationY = 0.0;
               }

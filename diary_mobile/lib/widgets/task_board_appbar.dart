@@ -99,8 +99,7 @@ class TaskBoardAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           icon: const Icon(Icons.note_add),
           tooltip: 'Add New Page',
-          onPressed: () =>
-              showAddPageDialog(context, taskProvider, pageToScrollTo),
+          onPressed: () => showAddPageDialog(context, taskProvider),
         ),
         IconButton(
           icon: Icon(

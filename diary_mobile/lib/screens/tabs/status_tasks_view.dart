@@ -1,5 +1,5 @@
 // lib/screens/tabs/status_tasks_view.dart
-import 'package:diary_mobile/utils/task_helpers.dart';
+import 'package:diary_mobile/widgets/status_dropTarget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:diary_mobile/models/task_dto.dart';
@@ -8,8 +8,8 @@ import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:diary_mobile/dialogs/show_edit_task_dialog.dart';
 import 'package:diary_mobile/dialogs/task_history_dialog.dart';
 import 'package:intl/intl.dart';
-
-enum _TaskCountFilter { top3, top5, top10, all }
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class StatusTasksView extends StatefulWidget {
   final List<TaskDto> tasksToShow;
@@ -28,6 +28,7 @@ class StatusTasksView extends StatefulWidget {
   final TaskStatus filterStatus;
   final VoidCallback? onScrollComplete;
   final Map<String, dynamic> expansionTileControllers;
+  // New callbacks for drag and drop
   final VoidCallback onDragStarted;
   final VoidCallback onDragEnded;
 
@@ -56,37 +57,10 @@ class StatusTasksView extends StatefulWidget {
   State<StatusTasksView> createState() => _StatusTasksViewState();
 }
 
-class _StatusTasksViewState extends State<StatusTasksView>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  _TaskCountFilter _selectedFilter = _TaskCountFilter.all;
-  late AnimationController _animationController;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 5), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
+class _StatusTasksViewState extends State<StatusTasksView> {
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Unknown Date';
+    return DateFormat('MMMM dd, yyyy').format(date);
   }
 
   void _confirmDeleteTask(
@@ -94,6 +68,8 @@ class _StatusTasksViewState extends State<StatusTasksView>
     TaskProvider taskProvider,
     TaskDto task,
   ) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -115,21 +91,18 @@ class _StatusTasksViewState extends State<StatusTasksView>
                     task.title,
                     TaskStatus.deleted,
                   );
-                  Future.microtask(
-                    () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Task deleted successfully!'),
-                      ),
+                  Navigator.pop(context);
+                  showTopSnackBar(
+                    Overlay.of(context),
+                    CustomSnackBar.success(
+                      message: "Task Deleted Successfully",
                     ),
                   );
-                  Navigator.pop(context);
                 } catch (e) {
-                  Future.microtask(
-                    () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to update task status: $e'),
-                      ),
-                    ),
+                  Navigator.pop(context);
+                  showTopSnackBar(
+                    Overlay.of(context),
+                    CustomSnackBar.error(message: "Failed to update Task"),
                   );
                 }
               },
@@ -144,53 +117,57 @@ class _StatusTasksViewState extends State<StatusTasksView>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     final taskProvider = Provider.of<TaskProvider>(context);
+    final DateTime today = DateTime.now();
+    final DateTime todayDateOnly = DateTime(today.year, today.month, today.day);
+    final Brightness brightness = Theme.of(context).brightness;
 
-    final Map<int, TaskDto> mostRecentTasksMap = {};
+    final Map<int, TaskDto> mostRecentPastOrToday = {};
+    final List<TaskDto> futureTasks = [];
+
     for (var task in widget.tasksToShow) {
-      if (task.status == widget.filterStatus) {
-        final int key = task.parentTaskId ?? task.id;
-        if (mostRecentTasksMap.containsKey(key)) {
-          final existingTask = mostRecentTasksMap[key]!;
-          if (task.pageDate != null &&
-              (existingTask.pageDate == null ||
-                  task.pageDate!.isAfter(existingTask.pageDate!))) {
-            mostRecentTasksMap[key] = task;
-          }
-        } else {
-          mostRecentTasksMap[key] = task;
+      final pageDate = task.pageDate;
+      if (pageDate == null) continue;
+
+      final pageDateOnly = DateTime(
+        pageDate.year,
+        pageDate.month,
+        pageDate.day,
+      );
+      final int key = task.parentTaskId ?? task.id;
+
+      if (pageDateOnly.isAfter(todayDateOnly)) {
+        futureTasks.add(task);
+      } else {
+        final existing = mostRecentPastOrToday[key];
+        if (existing == null || pageDate.isAfter(existing.pageDate!)) {
+          mostRecentPastOrToday[key] = task;
         }
       }
     }
 
-    List<TaskDto> filteredTasksForTab = mostRecentTasksMap.values.toList()
-      ..sort(
-        (a, b) => b.parentTaskCreatedAt!.compareTo(a.parentTaskCreatedAt!),
-      );
-
-    // Apply the task count filter
-    if (_selectedFilter == _TaskCountFilter.top3 &&
-        filteredTasksForTab.length > 3) {
-      filteredTasksForTab = filteredTasksForTab.sublist(0, 3);
-    } else if (_selectedFilter == _TaskCountFilter.top5 &&
-        filteredTasksForTab.length > 5) {
-      filteredTasksForTab = filteredTasksForTab.sublist(0, 5);
-    } else if (_selectedFilter == _TaskCountFilter.top10 &&
-        filteredTasksForTab.length > 10) {
-      filteredTasksForTab = filteredTasksForTab.sublist(0, 10);
-    }
+    // Filter final list based on filterStatus
+    final List<TaskDto> filteredTasksForTab = [
+      // Include only most recent past/today tasks matching filterStatus
+      ...mostRecentPastOrToday.values.where(
+        (task) => task.status == widget.filterStatus,
+      ),
+      // Include all future tasks matching filterStatus
+      ...futureTasks.where((task) => task.status == widget.filterStatus),
+    ]..sort((a, b) => b.parentTaskCreatedAt!.compareTo(a.parentTaskCreatedAt!));
 
     if (filteredTasksForTab.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Using getStatusIcon to display a relevant icon based on the filter status
             Icon(
-              Icons.task_alt_outlined,
+              getStatusIcon(
+                widget.filterStatus,
+              ), // Dynamic icon based on status
               size: 80,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: getStatusColor(widget.filterStatus, brightness),
             ),
             const SizedBox(height: 16),
             Text(
@@ -202,219 +179,169 @@ class _StatusTasksViewState extends State<StatusTasksView>
         ),
       );
     }
-
-    return Column(
-      children: [
-        // Filter Dropdown
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: DropdownButton<_TaskCountFilter>(
-            value: _selectedFilter,
-            onChanged: (_TaskCountFilter? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _selectedFilter = newValue;
-                });
-                _animationController.reset();
-                _animationController.forward();
-              }
-            },
-            items: const <DropdownMenuItem<_TaskCountFilter>>[
-              DropdownMenuItem(
-                value: _TaskCountFilter.all,
-                child: Text('All Tasks'),
+    return ListView.builder(
+      controller: widget.scrollController,
+      itemCount: filteredTasksForTab.length,
+      itemBuilder: (context, index) {
+        final task = filteredTasksForTab[index];
+        // Wrap each task Card with LongPressDraggable
+        return LongPressDraggable<TaskDto>(
+          data: task,
+          feedback: Material(
+            elevation: 8.0,
+            shadowColor: Colors.black.withOpacity(0.6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(12.0),
+                border: Border.all(
+                  color: Theme.of(context).primaryColor,
+                  width: 2.0,
+                ),
               ),
-              DropdownMenuItem(
-                value: _TaskCountFilter.top3,
-                child: Text('Top 3 Most Recent'),
+              child: Text(
+                task.title,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              DropdownMenuItem(
-                value: _TaskCountFilter.top5,
-                child: Text('Top 5 Most Recent'),
-              ),
-              DropdownMenuItem(
-                value: _TaskCountFilter.top10,
-                child: Text('Top 10 Most Recent'),
-              ),
-            ],
-            isExpanded: true,
-            underline: Container(), // Remove the default underline
-            icon: const Icon(Icons.arrow_drop_down),
-            hint: const Text('Select number of tasks to display'),
+            ),
           ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            controller: widget.scrollController,
-            itemCount: filteredTasksForTab.length,
-            itemBuilder: (context, index) {
-              final task = filteredTasksForTab[index];
-              return SlideTransition(
-                position: _slideAnimation,
-                child: LongPressDraggable<TaskDto>(
-                  data: task,
-                  feedback: Material(
-                    elevation: 8.0,
-                    shadowColor: Colors.black.withOpacity(0.6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(12.0),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(
-                          color: Theme.of(context).primaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      child: Text(
-                        task.title,
-                        style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
+          childWhenDragging: Opacity(
+            opacity: 0.5,
+            child: Card(
+              margin: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                vertical: 4.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    title: Text(
+                      task.title,
+                      style: TextStyle(
+                        decoration: task.status == TaskStatus.complete
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
-                  ),
-                  childWhenDragging: Opacity(
-                    opacity: 0.5,
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
-                        vertical: 1.0,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ListTile(
-                            title: Text(task.title, style: const TextStyle()),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  task.parentTaskCreatedAt != null
-                                      ? 'Created At: ${formatDate(task.parentTaskCreatedAt)}'
-                                      : 'Created At: Unknown',
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                                if (task.pageDate != null)
-                                  Text(
-                                    'Page Date: ${formatDate(task.pageDate)}',
-                                    style: const TextStyle(color: Colors.grey),
-                                  ),
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.history),
-                                  tooltip: 'View History',
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (_) =>
-                                          TaskHistoryDialog(taskId: task.id),
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                  ),
-                                  tooltip: 'Delete Task',
-                                  onPressed: () => _confirmDeleteTask(
-                                    context,
-                                    taskProvider,
-                                    task,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            onTap: () =>
-                                showEditTaskDialog(context, taskProvider, task),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  onDragStarted: () {
-                    widget
-                        .onDragStarted(); // Notify parent that dragging has started
-                  },
-                  onDragEnd: (details) {
-                    widget.onDragEnded();
-                  },
-                  child: Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 8.0,
-                      vertical: 4.0,
-                    ),
-                    child: Column(
+
+                    subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ListTile(
-                          title: Text(task.title, style: const TextStyle()),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                task.parentTaskCreatedAt != null
-                                    ? 'Created At: ${formatDate(task.parentTaskCreatedAt)}'
-                                    : 'Created At: Unknown',
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                              if (task.pageDate != null)
-                                Text(
-                                  'Page Date: ${formatDate(task.pageDate)}',
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                            ],
+                        Text(
+                          task.parentTaskCreatedAt != null
+                              ? 'Created At: ${_formatDate(task.parentTaskCreatedAt)}'
+                              : 'Created At: Unknown',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        if (task.pageDate != null)
+                          Text(
+                            'Page Date: ${_formatDate(task.pageDate)}',
+                            style: const TextStyle(color: Colors.grey),
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.history),
-                                tooltip: 'View History',
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) =>
-                                        TaskHistoryDialog(taskId: task.id),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                tooltip: 'Delete Task',
-                                onPressed: () => _confirmDeleteTask(
-                                  context,
-                                  taskProvider,
-                                  task,
-                                ),
-                              ),
-                            ],
-                          ),
-                          onTap: () =>
-                              showEditTaskDialog(context, taskProvider, task),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.history),
+                          tooltip: 'View History',
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) =>
+                                  TaskHistoryDialog(taskId: task.id),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          tooltip: 'Delete Task',
+                          onPressed: () =>
+                              _confirmDeleteTask(context, taskProvider, task),
                         ),
                       ],
                     ),
+                    onTap: () =>
+                        showEditTaskDialog(context, taskProvider, task),
                   ),
-                ),
-              );
-            },
+                ],
+              ),
+            ),
           ),
-        ),
-      ],
+          onDragStarted: () {
+            widget.onDragStarted();
+          },
+          onDragEnd: (details) {
+            widget.onDragEnded();
+          },
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListTile(
+                  title: Text(
+                    task.title,
+                    style: TextStyle(
+                      decoration: task.status == TaskStatus.complete
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task.parentTaskCreatedAt != null
+                            ? 'Created At: ${_formatDate(task.parentTaskCreatedAt)}'
+                            : 'Created At: Unknown',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      if (task.pageDate != null)
+                        Text(
+                          'Page Date: ${_formatDate(task.pageDate)}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                    ],
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.history),
+                        tooltip: 'View History',
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => TaskHistoryDialog(taskId: task.id),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Delete Task',
+                        onPressed: () =>
+                            _confirmDeleteTask(context, taskProvider, task),
+                      ),
+                    ],
+                  ),
+                  onTap: () => showEditTaskDialog(context, taskProvider, task),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

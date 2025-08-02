@@ -1,6 +1,8 @@
+// task_board_screen.dart
 import 'dart:ui';
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
 import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
+import 'package:diary_mobile/providers/page_provider.dart';
 import 'package:diary_mobile/screens/build_empty_state.dart';
 import 'package:diary_mobile/screens/build_error_state.dart';
 import 'package:diary_mobile/screens/build_loading_screen.dart';
@@ -11,10 +13,14 @@ import 'package:diary_mobile/widgets/main_tab_bar.dart';
 import 'package:diary_mobile/widgets/status_dropTarget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '/models/task_dto.dart';
 import '/mixin/taskstatus.dart';
 import '/providers/task_provider.dart';
 import '/providers/theme_provider.dart';
+import 'package:diary_mobile/providers/page_provider.dart';
+
 import 'package:diary_mobile/screens/tabs/all_tasks_view.dart'
     hide ExpansibleController;
 import 'package:diary_mobile/screens/tabs/status_tasks_view.dart';
@@ -49,6 +55,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   late TabController _filterTabController;
   TaskStatus? _currentFilterStatus;
   int _initialMainTabIndex = 0;
+
+  // Add a listener for PageProvider
+  late PageProvider _pageProvider;
+  int? _previousPageCount;
 
   @override
   void initState() {
@@ -108,6 +118,35 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         });
       }
     });
+
+    // Initialize pageProvider and add listener
+    _pageProvider = Provider.of<PageProvider>(context, listen: false);
+    _previousPageCount = _pageProvider.pages.length;
+    _pageProvider.addListener(_onPageProviderChange);
+  }
+
+  void _onPageProviderChange() {
+    // This listener will be triggered whenever _pages in PageProvider changes
+    // after fetchPagesByDiary is called (which happens in TaskProvider's createNewPage)
+    if (_pageProvider.pages.length > (_previousPageCount ?? 0)) {
+      // A new page has been added
+      final int? newPageId = _pageProvider.pages.isNotEmpty
+          ? _pageProvider
+                .pages
+                .last
+                .pageId // Assuming new pages are added to the end or you have a way to identify the newest one
+          : null;
+
+      if (newPageId != null) {
+        // You might want to scroll to the newly created page
+        // and potentially expand a default status (e.g., backlog)
+        _scrollToPageAndStatus(
+          newPageId,
+          TaskStatus.backlog,
+        ); // Or any other default status
+      }
+    }
+    _previousPageCount = _pageProvider.pages.length;
   }
 
   void _onSearchChanged() {
@@ -193,6 +232,12 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   Future<void> _fetchTasksWithErrorHandling() async {
     try {
       await Provider.of<TaskProvider>(context, listen: false).fetchTasks();
+      // Also fetch pages to ensure PageProvider is up-to-date
+      await Provider.of<PageProvider>(
+        context,
+        listen: false,
+      ).fetchPagesByDiary(1); // Assuming diaryId is 1
+
       setState(() {
         _fetchErrorMessage = null;
         print('Tasks fetched successfully');
@@ -334,6 +379,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     _searchController.dispose();
     _mainTabController.dispose();
     _filterTabController.dispose();
+    _pageProvider.removeListener(_onPageProviderChange); // Dispose listener
     for (var controller in _expansionTileControllers.values) {
       controller.dispose();
     }
@@ -345,6 +391,9 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final pageProvider = Provider.of<PageProvider>(
+      context,
+    ); // Listen to PageProvider
     final Brightness currentBrightness = Theme.of(context).brightness;
 
     final List<TaskDto> tasksToShow = taskProvider.tasks
@@ -355,15 +404,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     for (var task in allTasks) {
       tasksByPage.putIfAbsent(task.pageId, () => []).add(task);
     }
-    final List<int> sortedPageIds = tasksByPage.keys.toList()
+    final sortedPageIds = pageProvider.pages.map((p) => p.pageId).toList()
       ..sort((a, b) {
-        final DateTime? dateA = tasksByPage[a]?.first.pageDate;
-        final DateTime? dateB = tasksByPage[b]?.first.pageDate;
-
-        if (dateA == null && dateB == null) return 0;
-        if (dateA == null) return -1;
-        if (dateB == null) return 1;
-        return dateA.compareTo(dateB);
+        final aDate = pageProvider.getPageDateById(a);
+        final bDate = pageProvider.getPageDateById(b);
+        return aDate!.compareTo(bDate!);
       });
 
     if (taskProvider.errorMessage != null) {
@@ -384,11 +429,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       );
     }
     if (sortedPageIds.isEmpty && !_isFiltering) {
-      return buildEmptyState(
-        themeProvider,
-        taskProvider,
-        context,
-        _pageToScrollTo,
+      return EmptyStateScreen(
+        themeProvider: themeProvider,
+        taskProvider: taskProvider,
+        scrollToPageId: _pageToScrollTo,
       );
     }
 
@@ -464,11 +508,16 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                     context,
                     listen: false,
                   ).fetchTasks();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Tasks Refreshed."),
-                      duration: Duration(seconds: 2),
-                    ),
+                  // Also refresh pages after tasks are fetched
+                  await Provider.of<PageProvider>(
+                    context,
+                    listen: false,
+                  ).fetchPagesByDiary(1); // Assuming diaryId is 1
+
+                  showTopSnackBar(
+                    Overlay.of(context),
+                    const CustomSnackBar.success(message: 'Tasks Refreshed'),
+                    displayDuration: Durations.short1,
                   );
                 },
                 icon: const Icon(Icons.refresh),
@@ -476,8 +525,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               IconButton(
                 icon: const Icon(Icons.note_add),
                 tooltip: 'Add New Page',
-                onPressed: () =>
-                    showAddPageDialog(context, taskProvider, _pageToScrollTo),
+                onPressed: () => showAddPageDialog(
+                  context,
+                  taskProvider,
+                ), // Removed scrollToPageId parameter
               ),
               IconButton(
                 icon: Icon(
@@ -520,6 +571,10 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
                     AllTasksView(
+                      pageDatesById: {
+                        for (var page in pageProvider.pages)
+                          page.pageId: page.pageDate,
+                      },
                       allTasks: allTasks,
                       scrollTrigger: _scrollTrigger,
                       tasksToShow: tasksToShow,

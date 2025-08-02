@@ -98,7 +98,7 @@ namespace DiaryApi.Controllers
         {
             var pageTasks = await _context.PageTasks
                                           .Include(pt => pt.Page)
-                                          .Include(pt => pt.ParentTask)  
+                                          .Include(pt => pt.ParentTask)
                                           .OrderBy(pt => pt.PageId)
                                           .Select(pt => new PageTaskResponseDto
                                           {
@@ -179,6 +179,7 @@ namespace DiaryApi.Controllers
         {
             var history = await _context.PageTasks
                                         .Include(pt => pt.Page)
+                                        .Include(pt => pt.ParentTask) // Ensure ParentTask is included
                                         .Where(pt => pt.ParentTaskId == parentTaskId)
                                         .OrderBy(pt => pt.Page.PageDate)
                                         .Select(pt => new TaskHistoryDto
@@ -187,7 +188,8 @@ namespace DiaryApi.Controllers
                                             PageId = pt.PageId,
                                             PageDate = pt.Page.PageDate,
                                             Title = pt.Title,
-                                            Status = pt.Status
+                                            Status = pt.Status,
+                                            ParentTaskCreatedAt = pt.ParentTask.CreatedAt // Added this line
                                         })
                                         .ToListAsync();
 
@@ -213,8 +215,11 @@ namespace DiaryApi.Controllers
         [HttpPut("pagetask/{pageTaskId}/status/today")]
         public async Task<IActionResult> ChangeStatusToTodayPage(int pageTaskId, [FromBody] UpdateTaskStatusDto updateDto)
         {
+            Console.WriteLine("Hit received to update");
+
             if (!ModelState.IsValid)
             {
+                Console.WriteLine("Invalid request to update");
                 return BadRequest(ModelState);
             }
 
@@ -225,6 +230,7 @@ namespace DiaryApi.Controllers
 
             if (originalPageTask == null)
             {
+                Console.WriteLine("PageTask not found");
                 return NotFound($"PageTask with ID {pageTaskId} not found.");
             }
 
@@ -232,10 +238,10 @@ namespace DiaryApi.Controllers
             DateTime taskDate = originalPageTask.Page.PageDate.Date;
             Console.WriteLine($"Task Date: {taskDate}, Today: {today}, Comparison: {taskDate.CompareTo(today)}");
 
-
             if (taskDate > today)
             {
-                // Task is on a future page — do not move it, just update its status
+                // Future task, just update the status
+                Console.WriteLine("Updating future task");
                 originalPageTask.Status = updateDto.Status;
                 await _context.SaveChangesAsync();
 
@@ -244,21 +250,37 @@ namespace DiaryApi.Controllers
 
             if (taskDate == today)
             {
-                // Task is already on today's page — update its status only
+                // Already on today's page, update status
+                Console.WriteLine("Updating task on today's page");
                 originalPageTask.Status = updateDto.Status;
                 await _context.SaveChangesAsync();
 
                 return Ok(new { Message = "Status updated on existing task for today's page." });
             }
 
+            // The task is from a past page, move it to today's page
+            Console.WriteLine("Moving past task to today's page");
 
-            // Task is on a past page — create a new one for today
             var todayPage = await _context.Pages.FirstOrDefaultAsync(p => p.PageDate.Date == today);
             if (todayPage == null)
             {
+                Console.WriteLine("Creating today's page");
                 todayPage = new Page { PageDate = today };
                 _context.Pages.Add(todayPage);
                 await _context.SaveChangesAsync();
+            }
+
+            var existingTodayTask = await _context.PageTasks
+                                                  .FirstOrDefaultAsync(pt => pt.PageId == todayPage.PageId &&
+                                                                             pt.ParentTaskId == originalPageTask.ParentTaskId);
+
+            if (existingTodayTask != null)
+            {
+                Console.WriteLine("Task already exists on today's page");
+                existingTodayTask.Status = updateDto.Status;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { NewPageTaskId = existingTodayTask.Id, Message = "Existing task's status updated on today's page." });
             }
 
             var newPageTask = new PageTask
@@ -274,7 +296,6 @@ namespace DiaryApi.Controllers
 
             return Ok(new { NewPageTaskId = newPageTask.Id, Message = "Task copied and status updated on today's page." });
         }
-
 
     }
 }

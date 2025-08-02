@@ -1,14 +1,16 @@
+// show_add_page_dialog.dart
+import 'package:diary_mobile/providers/page_provider.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:diary_mobile/widgets/shake_dialog_content.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
-void showAddPageDialog(
-  BuildContext context,
-  TaskProvider taskProvider,
-  int? scrollToPageId,
-) {
+void showAddPageDialog(BuildContext context, TaskProvider taskProvider) {
+  // Removed scrollToPageId parameter
   DateTime? selectedPageDate = DateTime.now();
   bool hasError = false;
 
@@ -72,10 +74,12 @@ void showAddPageDialog(
                     });
 
                     Future.microtask(() {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please select a Page Date.'),
+                      showTopSnackBar(
+                        Overlay.of(context),
+                        const CustomSnackBar.info(
+                          message: 'Please Select A Date',
                         ),
+                        displayDuration: Durations.short1,
                       );
                     });
                     return;
@@ -91,17 +95,23 @@ void showAddPageDialog(
 
                     if (newPageId != -1) {
                       Navigator.pop(context);
-                      setStateSB(() {
-                        scrollToPageId = newPageId;
-                      });
                       Future.microtask(() {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'New page created and tasks migrated from previous page',
-                            ),
+                        showTopSnackBar(
+                          Overlay.of(context),
+                          const CustomSnackBar.success(
+                            message:
+                                'New page created and tasks migrated from previous page',
                           ),
+                          displayDuration: Durations.short3,
                         );
+                        Provider.of<TaskProvider>(
+                          context,
+                          listen: false,
+                        ).fetchTasks();
+                        Provider.of<PageProvider>(
+                          context,
+                          listen: false,
+                        ).fetchPagesByDiary(1);
                       });
                     } else {
                       taskProvider.clearErrorMessage();
@@ -116,13 +126,12 @@ void showAddPageDialog(
                       });
 
                       Future.microtask(() {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              taskProvider.errorMessage ??
-                                  'Page Already Created.',
-                            ),
+                        showTopSnackBar(
+                          Overlay.of(context),
+                          const CustomSnackBar.error(
+                            message: 'Page Already Created',
                           ),
+                          displayDuration: Durations.short1,
                         );
                       });
                     }
