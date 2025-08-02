@@ -1,4 +1,5 @@
 // lib/screens/tabs/status_tasks_view.dart
+import 'package:diary_mobile/utils/task_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:diary_mobile/models/task_dto.dart';
@@ -8,13 +9,9 @@ import 'package:diary_mobile/dialogs/show_edit_task_dialog.dart';
 import 'package:diary_mobile/dialogs/task_history_dialog.dart';
 import 'package:intl/intl.dart';
 
-// Enum for task count filter options
 enum _TaskCountFilter { top3, top5, top10, all }
 
 class StatusTasksView extends StatefulWidget {
-  // The wantKeepAlive getter should be in the State class, not here.
-  // bool get wantKeepAlive => true; // REMOVE THIS LINE from StatefulWidget
-
   final List<TaskDto> tasksToShow;
   final Map<int, List<TaskDto>> tasksByPage;
   final List<int> sortedPageIds;
@@ -31,7 +28,6 @@ class StatusTasksView extends StatefulWidget {
   final TaskStatus filterStatus;
   final VoidCallback? onScrollComplete;
   final Map<String, dynamic> expansionTileControllers;
-  // New callbacks for drag and drop
   final VoidCallback onDragStarted;
   final VoidCallback onDragEnded;
 
@@ -62,17 +58,12 @@ class StatusTasksView extends StatefulWidget {
 
 class _StatusTasksViewState extends State<StatusTasksView>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  // Added AutomaticKeepAliveClientMixin
-  // State variable for the selected filter
   _TaskCountFilter _selectedFilter = _TaskCountFilter.all;
-
-  // Animation controller for the slide-in effect
   late AnimationController _animationController;
-  // Animation for the slide transition
   late Animation<Offset> _slideAnimation;
 
   @override
-  bool get wantKeepAlive => true; // Moved wantKeepAlive here
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -96,11 +87,6 @@ class _StatusTasksViewState extends State<StatusTasksView>
   void dispose() {
     _animationController.dispose();
     super.dispose();
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Unknown Date';
-    return DateFormat('MMMM dd, yyyy').format(date);
   }
 
   void _confirmDeleteTask(
@@ -229,7 +215,6 @@ class _StatusTasksViewState extends State<StatusTasksView>
                 setState(() {
                   _selectedFilter = newValue;
                 });
-                // When filter changes, restart animation for new list
                 _animationController.reset();
                 _animationController.forward();
               }
@@ -265,7 +250,7 @@ class _StatusTasksViewState extends State<StatusTasksView>
             itemBuilder: (context, index) {
               final task = filteredTasksForTab[index];
               return SlideTransition(
-                position: _slideAnimation, // Use the slide animation
+                position: _slideAnimation,
                 child: LongPressDraggable<TaskDto>(
                   data: task,
                   feedback: Material(
@@ -311,13 +296,13 @@ class _StatusTasksViewState extends State<StatusTasksView>
                               children: [
                                 Text(
                                   task.parentTaskCreatedAt != null
-                                      ? 'Created At: ${_formatDate(task.parentTaskCreatedAt)}'
+                                      ? 'Created At: ${formatDate(task.parentTaskCreatedAt)}'
                                       : 'Created At: Unknown',
                                   style: const TextStyle(color: Colors.grey),
                                 ),
                                 if (task.pageDate != null)
                                   Text(
-                                    'Page Date: ${_formatDate(task.pageDate)}',
+                                    'Page Date: ${formatDate(task.pageDate)}',
                                     style: const TextStyle(color: Colors.grey),
                                   ),
                               ],
@@ -379,13 +364,13 @@ class _StatusTasksViewState extends State<StatusTasksView>
                             children: [
                               Text(
                                 task.parentTaskCreatedAt != null
-                                    ? 'Created At: ${_formatDate(task.parentTaskCreatedAt)}'
+                                    ? 'Created At: ${formatDate(task.parentTaskCreatedAt)}'
                                     : 'Created At: Unknown',
                                 style: const TextStyle(color: Colors.grey),
                               ),
                               if (task.pageDate != null)
                                 Text(
-                                  'Page Date: ${_formatDate(task.pageDate)}',
+                                  'Page Date: ${formatDate(task.pageDate)}',
                                   style: const TextStyle(color: Colors.grey),
                                 ),
                             ],

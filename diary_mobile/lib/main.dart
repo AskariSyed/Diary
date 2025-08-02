@@ -1,3 +1,4 @@
+import 'package:diary_mobile/providers/page_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
@@ -17,11 +18,12 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => PageProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'Diary Task Board',
+            title: 'E-Diary',
             theme: ThemeData(
               useMaterial3: true,
               brightness: Brightness.light,

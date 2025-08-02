@@ -12,10 +12,19 @@ Widget buildLoadingScreen(
 ) {
   return Scaffold(
     appBar: AppBar(
-      title: const Text('Diary Task Board'),
+      elevation: 2,
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      title: Text(
+        'E-Diary',
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Colors.deepPurple,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      centerTitle: true,
       actions: [
         IconButton(
-          icon: const Icon(Icons.note_add),
+          icon: const Icon(Icons.note_add_outlined),
           tooltip: 'Add New Page',
           onPressed: () =>
               showAddPageDialog(context, taskProvider, pageToScrollTo),
@@ -23,8 +32,8 @@ Widget buildLoadingScreen(
         IconButton(
           icon: Icon(
             themeProvider.themeMode == ThemeMode.light
-                ? Icons.light_mode_rounded
-                : Icons.dark_mode_rounded,
+                ? Icons.light_mode
+                : Icons.dark_mode,
           ),
           onPressed: themeProvider.toggleTheme,
         ),

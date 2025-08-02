@@ -98,7 +98,7 @@ void showAddPageDialog(
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                              'New page created and tasks migrated!',
+                              'New page created and tasks migrated from previous page',
                             ),
                           ),
                         );
@@ -120,7 +120,7 @@ void showAddPageDialog(
                           SnackBar(
                             content: Text(
                               taskProvider.errorMessage ??
-                                  'Failed to create page.',
+                                  'Page Already Created.',
                             ),
                           ),
                         );

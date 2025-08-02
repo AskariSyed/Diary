@@ -1,24 +1,22 @@
-// lib/screens/task_board_screen.dart
 import 'dart:ui';
-
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
 import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/screens/build_empty_state.dart';
 import 'package:diary_mobile/screens/build_error_state.dart';
 import 'package:diary_mobile/screens/build_loading_screen.dart';
-import 'package:diary_mobile/widgets/status_dropTarget.dart'; // Ensure this import is correct
+import 'package:diary_mobile/utils/task_helpers.dart';
+import 'package:diary_mobile/widgets/animated_switcher_main_tab_filter_tab.dart';
+import 'package:diary_mobile/widgets/drag_and_drop_target_bar.dart';
+import 'package:diary_mobile/widgets/main_tab_bar.dart';
+import 'package:diary_mobile/widgets/status_dropTarget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/models/task_dto.dart';
-import '/mixin/taskstatus.dart'; // Ensure this import is correct
+import '/mixin/taskstatus.dart';
 import '/providers/task_provider.dart';
 import '/providers/theme_provider.dart';
-import 'package:intl/intl.dart';
-
-// Import the new tab view files
 import 'package:diary_mobile/screens/tabs/all_tasks_view.dart'
-    hide
-        ExpansibleController; // Ensure ExpansibleController is correctly handled if it's in multiple files
+    hide ExpansibleController;
 import 'package:diary_mobile/screens/tabs/status_tasks_view.dart';
 
 class TaskBoardScreen extends StatefulWidget {
@@ -49,12 +47,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
 
   late TabController _mainTabController;
   late TabController _filterTabController;
-
-  // Keep track of the currently selected status for filtering
   TaskStatus? _currentFilterStatus;
-
-  // This variable will hold the index for the 'Diary' tab's initial view
-  // It should be used to directly set the index of _mainTabController
   int _initialMainTabIndex = 0;
 
   @override
@@ -62,15 +55,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     super.initState();
     Future.microtask(() => _fetchTasksWithErrorHandling());
     _searchController.addListener(_onSearchChanged);
-
-    // Initialize main tab controller (Diary, Filters)
     _mainTabController = TabController(
-      length: 2, // 'Diary' and 'Filters'
+      length: 2,
       vsync: this,
-      initialIndex: _initialMainTabIndex, // Set initial index here
+      initialIndex: _initialMainTabIndex,
     );
-
-    // Initialize filter tab controller (for individual statuses)
     _filterTabController = TabController(
       length: TaskStatus.values
           .where((status) => status != TaskStatus.deleted)
@@ -81,15 +70,13 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     _mainTabController.addListener(() {
       if (!_mainTabController.indexIsChanging) {
         if (_mainTabController.index == 0) {
-          // Switched to Diary tab
           setState(() {
-            _currentFilterStatus = null; // Clear any active status filter
+            _currentFilterStatus = null;
             if (_pageToScrollTo != null) {
               _scrollTrigger++;
             }
           });
         } else {
-          // Switched to Filters tab
           setState(() {
             _pageToScrollTo = null;
             _statusToExpand = null;
@@ -123,11 +110,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     });
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Unknown Date';
-    return DateFormat('MMMM dd, yyyy').format(date);
-  }
-
   void _onSearchChanged() {
     if (_searchController.text.isEmpty) {
       _searchTasks();
@@ -148,7 +130,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       } else {
         _filteredTasks = allTasks.where((task) {
           final taskTitle = task.title.toLowerCase();
-          final formattedDate = _formatDate(task.pageDate).toLowerCase();
+          final formattedDate = formatDate(task.pageDate).toLowerCase();
 
           final matchesTitle =
               searchText.isNotEmpty && taskTitle.contains(searchText);
@@ -203,7 +185,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        _searchController.text = _formatDate(picked);
+        _searchController.text = formatDate(picked);
       });
     }
   }
@@ -260,8 +242,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               if (dateB == null) return 1;
               return dateA.compareTo(dateB);
             });
-          // Set the initial index for the main tab controller to 0 (Diary tab)
-          // The pageToScrollTo will then handle the specific page within the Diary tab
           _initialMainTabIndex = 0;
         } else {
           _initialMainTabIndex = 0;
@@ -276,23 +256,16 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   }
 
   final Map<String, GlobalKey> _globalKeys = {};
-
   GlobalKey _getPageGlobalKey(String viewPrefix, int pageId) {
     final String keyString = '$viewPrefix-$pageId';
     final GlobalKey key = _globalKeys.putIfAbsent(
       keyString,
       () => GlobalObjectKey(keyString),
     );
-    print(
-      'TaskBoardScreen: _getPageGlobalKey called for $keyString. Key instance: $key',
-    );
     return key;
   }
 
   void _scrollToPageAndStatus(int pageId, TaskStatus status) {
-    print(
-      'TaskBoardScreen: _scrollToPageAndStatus called with pageId: $pageId, status: $status',
-    );
     setState(() {
       _isSearching = false;
       _isScrollingFromSearch = true;
@@ -301,12 +274,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       _clearSearch();
 
       _scrollTrigger++;
-      print(
-        'TaskBoardScreen: After setState in _scrollToPageAndStatus: _pageToScrollTo = $_pageToScrollTo, _scrollTrigger = $_scrollTrigger',
-      );
     });
-
-    // If currently on the "Filters" tab, switch to "Diary" tab
     if (_mainTabController.index != 0) {
       print('TaskBoardScreen: Switching to All Tasks tab.');
       if (mounted) {
@@ -320,10 +288,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   }
 
   void _onScrollAndExpand(int pageId, TaskStatus status) {
-    print(
-      'TaskBoardScreen: _onScrollAndExpand callback received for page $pageId, status $status',
-    );
-
     setState(() {
       _statusExpandedState.clear();
       _statusExpandedState['status_${pageId}_${status.index}'] = true;
@@ -386,9 +350,9 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     final List<TaskDto> tasksToShow = taskProvider.tasks
         .where((task) => task.status != TaskStatus.deleted)
         .toList();
-
+    List<TaskDto> allTasks = taskProvider.tasks.toList();
     final Map<int, List<TaskDto>> tasksByPage = {};
-    for (var task in tasksToShow) {
+    for (var task in allTasks) {
       tasksByPage.putIfAbsent(task.pageId, () => []).add(task);
     }
     final List<int> sortedPageIds = tasksByPage.keys.toList()
@@ -429,7 +393,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     }
 
     return DefaultTabController(
-      length: 2, // 'Diary' and 'Filters'
+      length: 2,
       child: SafeArea(
         child: Scaffold(
           appBar: AppBar(
@@ -495,6 +459,21 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   },
                 ),
               IconButton(
+                onPressed: () async {
+                  await Provider.of<TaskProvider>(
+                    context,
+                    listen: false,
+                  ).fetchTasks();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Tasks Refreshed."),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.refresh),
+              ),
+              IconButton(
                 icon: const Icon(Icons.note_add),
                 tooltip: 'Add New Page',
                 onPressed: () =>
@@ -509,7 +488,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 onPressed: themeProvider.toggleTheme,
               ),
             ],
-            // This is where the main TabBar will be placed
             bottom: PreferredSize(
               preferredSize: Size.fromHeight(
                 _mainTabController.index == 0
@@ -518,139 +496,12 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               ),
               child: Column(
                 children: [
-                  TabBar(
-                    controller: _mainTabController,
-                    tabs: [
-                      Tab(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.book,
-                                size: 19,
-                                color: _mainTabController.index == 0
-                                    ? Colors.deepPurple
-                                    : Colors.grey,
-                              ),
-                              Text(
-                                'My Diary', // Bigger text
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: _mainTabController.index == 0
-                                      ? Colors
-                                            .deepPurple // Purple when selected
-                                      : Colors.grey, // Grey when not selected
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Tab(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.filter_list,
-                              size: 18,
-                              color: _mainTabController.index == 1
-                                  ? Colors
-                                        .deepPurple // Purple when selected
-                                  : Colors.grey, // Grey when not selected
-                            ),
-                            Text(
-                              'Filters',
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: _mainTabController.index == 1
-                                    ? Colors
-                                          .deepPurple // Purple when selected
-                                    : Colors.grey, // Grey when not selected
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    indicatorColor: Theme.of(context).colorScheme.onSurface,
-                    // labelColor and unselectedLabelColor are set directly on Icon and Text
-                  ),
-                  // Conditional TabBar for filters with animation
-                  AnimatedSwitcher(
-                    duration: const Duration(
-                      milliseconds: 400,
-                    ), // Adjust duration as needed
-                    transitionBuilder:
-                        (Widget child, Animation<double> animation) {
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0.0, -1.0), // Slide from top
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            ),
-                          );
-                        },
-                    child:
-                        _mainTabController.index ==
-                            1 // Only show when "Filters" tab is selected
-                        ? TabBar(
-                            key: const ValueKey(
-                              'filterTabBar',
-                            ), // Important for AnimatedSwitcher to work
-                            controller: _filterTabController,
-                            isScrollable: true,
-                            tabs: TaskStatus.values
-                                .where((status) => status != TaskStatus.deleted)
-                                .map(
-                                  (status) => Tab(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          getStatusIcon(status),
-                                          size: 18,
-                                          color: _currentFilterStatus == status
-                                              ? getStatusColor(
-                                                  status,
-                                                  currentBrightness,
-                                                ) // Use status color when selected
-                                              : Colors
-                                                    .grey, // Grey when not selected
-                                        ),
-                                        Text(
-                                          status.toApiString(),
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            color:
-                                                _currentFilterStatus == status
-                                                ? getStatusColor(
-                                                    status,
-                                                    currentBrightness,
-                                                  ) // Use status color when selected
-                                                : Colors
-                                                      .grey, // Grey when not selected
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            indicatorColor: Theme.of(
-                              context,
-                            ).colorScheme.onSurface,
-                            // labelColor and unselectedLabelColor are set directly on Icon and Text
-                          )
-                        : const SizedBox.shrink(), // Empty widget when not showing filters
+                  main_tab_bar(mainTabController: _mainTabController),
+                  animated_switcher_main_tab_filter_tab(
+                    mainTabController: _mainTabController,
+                    filterTabController: _filterTabController,
+                    currentFilterStatus: _currentFilterStatus,
+                    currentBrightness: currentBrightness,
                   ),
                 ],
               ),
@@ -658,33 +509,25 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
           ),
           body: Stack(
             children: [
-              // Wrap the TabBarView content for filters with AnimatedSwitcher
               AnimatedSwitcher(
-                duration: const Duration(
-                  milliseconds: 300,
-                ), // Duration of the animation
+                duration: const Duration(milliseconds: 300),
                 transitionBuilder: (Widget child, Animation<double> animation) {
-                  // You can choose different transitions here
                   return FadeTransition(opacity: animation, child: child);
                 },
                 child: TabBarView(
-                  key: ValueKey(
-                    _mainTabController.index,
-                  ), // Key changes when main tab changes
+                  key: ValueKey(_mainTabController.index),
                   controller: _mainTabController,
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Disable swiping on TabBarView directly
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    // "Diary" Tab Content (All Tasks View)
                     AllTasksView(
+                      allTasks: allTasks,
                       scrollTrigger: _scrollTrigger,
                       tasksToShow: tasksToShow,
                       tasksByPage: tasksByPage,
                       sortedPageIds: sortedPageIds,
-                      // getPageGlobalKey: _getPageGlobalKey,
                       statusExpandedState: _statusExpandedState,
                       currentBrightness: currentBrightness,
-                      formatDate: _formatDate,
+                      formatDate: formatDate,
                       getStatusColor: getStatusColor,
                       scrollToPageAndStatus: _scrollToPageAndStatus,
                       pageToScrollTo: _pageToScrollTo,
@@ -699,13 +542,9 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                       onScrollAndExpand: _onScrollAndExpand,
                       expansionTileControllers: _expansionTileControllers,
                     ),
-                    // "Filters" Tab Content (Status Tasks View, conditional on selected status)
-                    // This is the part that will animate
                     _currentFilterStatus == null
                         ? Center(
-                            key: const ValueKey(
-                              'noFilterSelected',
-                            ), // Unique key for AnimatedSwitcher
+                            key: const ValueKey('noFilterSelected'),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -726,16 +565,14 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                             ),
                           )
                         : StatusTasksView(
-                            key: ValueKey(
-                              _currentFilterStatus!.index,
-                            ), // Unique key for AnimatedSwitcher based on status
+                            key: ValueKey(_currentFilterStatus!.index),
                             tasksToShow: tasksToShow,
                             tasksByPage: tasksByPage,
                             sortedPageIds: sortedPageIds,
                             getPageGlobalKey: _getPageGlobalKey,
                             statusExpandedState: _statusExpandedState,
                             currentBrightness: currentBrightness,
-                            formatDate: _formatDate,
+                            formatDate: formatDate,
                             getStatusColor: getStatusColor,
                             scrollToPageAndStatus: _scrollToPageAndStatus,
                             scrollController: _scrollController,
@@ -768,28 +605,9 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 ),
               ),
               if (_isDraggingTask)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: Theme.of(context).cardColor.withOpacity(0.9),
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: TaskStatus.values
-                          .where((status) => status != TaskStatus.deleted)
-                          .map(
-                            (status) => buildStatusDropTarget(
-                              context,
-                              status,
-                              taskProvider,
-                              currentBrightness,
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
+                Drag_drop_target(
+                  taskProvider: taskProvider,
+                  currentBrightness: currentBrightness,
                 ),
               if (_isFiltering && _filteredTasks.isNotEmpty)
                 Positioned(
@@ -823,7 +641,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                                 child: ListTile(
                                   title: Text(task.title),
                                   subtitle: Text(
-                                    'Page Date: ${_formatDate(task.pageDate)} | Status: ${task.status.toApiString()}',
+                                    'Page Date: ${formatDate(task.pageDate)} | Status: ${task.status.toApiString()}',
                                   ),
                                   onTap: () {
                                     _scrollToPageAndStatus(
@@ -844,7 +662,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 Positioned.fill(
                   child: Stack(
                     children: [
-                      // Blur the background
                       BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
                         child: Container(
@@ -856,7 +673,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                           ).withOpacity(0.3),
                         ),
                       ),
-
                       Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,

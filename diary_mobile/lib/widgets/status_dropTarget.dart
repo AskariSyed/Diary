@@ -15,19 +15,34 @@ Widget buildStatusDropTarget(
     },
     onAcceptWithDetails: (details) async {
       final draggedTask = details.data;
+
+      // Crucially, get the ScaffoldMessengerState *before* the async operation.
+      // This ensures you have a stable reference, even if the context becomes invalid.
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      // You can also capture the context, but the messenger state is more direct
+      // for showing snackbars reliably.
+      final initialContext = context; // Keep this for the mounted check
+
       try {
         final response = await taskProvider.updateTaskStatusForTodayPage(
           draggedTask.id,
           status,
         );
 
+        // Check if the initial context is still mounted before using the messenger
+        // This is a belt-and-suspenders approach for maximum safety.
+        if (!initialContext.mounted) {
+          return; // If the widget is no longer in the tree, do nothing.
+        }
+
         final message = response?['message'] ?? 'Task status updated.';
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        if (!initialContext.mounted) {
+          return;
+        }
+        scaffoldMessenger.showSnackBar(
           SnackBar(content: Text('Failed to update task status: $e')),
         );
       }
@@ -86,17 +101,28 @@ Widget buildStatusDropTarget(
 }
 
 Color getStatusColor(TaskStatus status, Brightness brightness) {
-  final baseColors = {
-    TaskStatus.backlog: const Color.fromARGB(255, 177, 107, 107),
+  final lightColors = {
+    TaskStatus.backlog: const Color.fromARGB(255, 221, 128, 81),
     TaskStatus.toDiscuss: const Color.fromARGB(255, 222, 184, 70),
-    TaskStatus.inProgress: const Color.fromARGB(255, 113, 85, 161),
-    TaskStatus.onHold: const Color.fromARGB(255, 192, 87, 198),
-    TaskStatus.complete: const Color.fromARGB(255, 169, 215, 171),
+    TaskStatus.inProgress: const Color.fromARGB(255, 169, 141, 218),
+    TaskStatus.onHold: const Color.fromARGB(255, 207, 65, 65),
+    TaskStatus.complete: const Color.fromARGB(255, 117, 217, 122),
     TaskStatus.toFollowUp: const Color.fromARGB(255, 124, 196, 189),
   };
 
-  final baseColor = baseColors[status] ?? Colors.grey;
-  return baseColor;
+  final darkColors = {
+    TaskStatus.backlog: const Color.fromARGB(255, 220, 150, 150),
+    TaskStatus.toDiscuss: const Color.fromARGB(255, 215, 181, 56),
+    TaskStatus.inProgress: const Color.fromARGB(255, 158, 128, 230),
+    TaskStatus.onHold: const Color.fromARGB(255, 230, 135, 235),
+    TaskStatus.complete: const Color.fromARGB(255, 77, 212, 77),
+    TaskStatus.toFollowUp: const Color.fromARGB(255, 60, 218, 208),
+  };
+
+  final isDark = brightness == Brightness.dark;
+  final baseColors = isDark ? darkColors : lightColors;
+
+  return baseColors[status] ?? (isDark ? Colors.grey[300]! : Colors.grey[700]!);
 }
 
 IconData getStatusIcon(TaskStatus status) {
@@ -115,7 +141,5 @@ IconData getStatusIcon(TaskStatus status) {
       return Icons.follow_the_signs;
     case TaskStatus.deleted:
       return Icons.delete;
-    default:
-      return Icons.help_outline;
   }
 }

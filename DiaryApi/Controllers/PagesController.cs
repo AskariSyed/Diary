@@ -261,20 +261,18 @@ namespace DiaryApi.Controllers
                     targetPage = new Page
                     {
                         DiaryNo = 1,
-                        PageDate = copyDto.TargetPageDate.Date, // Store only date part
+                        PageDate = copyDto.TargetPageDate.Date, 
                       
                     };
                     _context.Pages.Add(targetPage);
-                    await _context.SaveChangesAsync(); // Save to get the new targetPage.PageId
+                    await _context.SaveChangesAsync(); 
                 }
 
-                // Fetch tasks from the source page that are not 'Completed' or 'Deleted'
-                // Assuming your PageTask model has a 'Status' property that can be compared to strings
                 var tasksToCopy = await _context.PageTasks
                     .Where(pt => pt.PageId == sourcePage.PageId &&
-                                 pt.Status.ToLower() != "completed" && // Case-insensitive comparison
+                                 pt.Status.ToLower() != "completed" && 
                                  pt.Status.ToLower() != "deleted")
-                    .AsNoTracking() // Use AsNoTracking for efficiency if you're not modifying them
+                    .AsNoTracking() 
                     .ToListAsync();
 
                 if (!tasksToCopy.Any())
@@ -287,7 +285,7 @@ namespace DiaryApi.Controllers
                     var existingTask = await _context.PageTasks
                         .FirstOrDefaultAsync(pt => pt.PageId == targetPage.PageId &&
                                                    pt.ParentTaskId == task.ParentTaskId &&
-                                                   pt.ParentTaskId != null); // Only consider tasks with a ParentTaskId
+                                                   pt.ParentTaskId != null);
 
                     if (existingTask != null)
                     {
@@ -320,6 +318,7 @@ namespace DiaryApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-    
-}
+      
+
+    }
 }

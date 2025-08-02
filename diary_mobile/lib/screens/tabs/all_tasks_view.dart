@@ -1,28 +1,13 @@
+import 'package:diary_mobile/widgets/page_view_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
-import 'package:diary_mobile/widgets/page_list_item.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
-// ignore: library_imports
-import 'dart:math' as M; // Corrected to library_imports
-
-abstract class ExpansibleController extends ChangeNotifier {
-  bool get isExpanded;
-  void expand();
-  void collapse();
-  void toggle();
-}
 
 class AllTasksView extends StatefulWidget {
-  String myFormatDateFunction(DateTime? date) {
-    if (date == null) {
-      return 'N/A';
-    }
-    return DateFormat('MMM dd').format(date);
-  }
-
   final List<TaskDto> tasksToShow;
+  final List<TaskDto> allTasks;
   final Map<int, List<TaskDto>> tasksByPage;
   final List<int> sortedPageIds;
   final Map<String, bool> statusExpandedState;
@@ -53,6 +38,7 @@ class AllTasksView extends StatefulWidget {
     required this.scrollTrigger,
     required this.onScrollAndExpand,
     required this.expansionTileControllers,
+    required this.allTasks,
   });
 
   @override
@@ -64,6 +50,7 @@ class _AllTasksViewState extends State<AllTasksView>
   late PageController _pageController;
   late ScrollController _pageIndicatorScrollController;
   int _currentPageIndex = 0;
+
   static const double _kPageIndicatorHeight = 60.0;
   static const double _kVisibleIndicatorBarWidth = 150.0;
   bool _isAnimatingPageController = false;
@@ -71,11 +58,11 @@ class _AllTasksViewState extends State<AllTasksView>
   static const double _kSelectedIndicatorWidth = 50.0;
   static const double _kUnselectedIndicatorWidth = 30.0;
   static const double _kHorizontalMargin = 2.0;
-
   static const double _kTodayButtonExpandedWidth = 70.0;
 
   double get _effectiveSelectedIndicatorTotalWidth =>
       _kSelectedIndicatorWidth + (_kHorizontalMargin * 2);
+
   double get _effectiveUnselectedIndicatorTotalWidth =>
       _kUnselectedIndicatorWidth + (_kHorizontalMargin * 2);
 
@@ -85,25 +72,21 @@ class _AllTasksViewState extends State<AllTasksView>
   @override
   void initState() {
     super.initState();
-    // Determine initial page index based on widget.pageToScrollTo
+
     _currentPageIndex =
         widget.pageToScrollTo != null &&
             widget.sortedPageIds.contains(widget.pageToScrollTo)
         ? widget.sortedPageIds.indexOf(widget.pageToScrollTo!)
-        : 0; // Default to the first page if no specific page is set
+        : 0;
 
     _pageController = PageController(initialPage: _currentPageIndex);
     _pageIndicatorScrollController = ScrollController();
 
-    // Schedule the initial scroll to ensure PageController has dimensions
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (_pageController.hasClients) {
-        // Ensure the PageView is at the correct page initially
-        // No need to animate if it's the initial page.
         if (_pageController.page?.round() != _currentPageIndex) {
           _pageController.jumpToPage(_currentPageIndex);
         }
-        // Center the indicator after initial page setting
         _scrollToCenterIndicator(_currentPageIndex);
       }
     });
@@ -112,13 +95,11 @@ class _AllTasksViewState extends State<AllTasksView>
   @override
   void didUpdateWidget(covariant AllTasksView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Only trigger scroll if the scrollTrigger changes and a page is specified
+
     if (widget.scrollTrigger != oldWidget.scrollTrigger &&
         widget.pageToScrollTo != null) {
       _handleScrollToPage();
-    }
-    // Also handle cases where pageToScrollTo might change without scrollTrigger
-    else if (widget.pageToScrollTo != oldWidget.pageToScrollTo &&
+    } else if (widget.pageToScrollTo != oldWidget.pageToScrollTo &&
         widget.pageToScrollTo != null) {
       final int targetIndex = widget.sortedPageIds.indexOf(
         widget.pageToScrollTo!,
@@ -142,11 +123,9 @@ class _AllTasksViewState extends State<AllTasksView>
         widget.pageToScrollTo!,
       );
       if (targetIndex != -1) {
-        // Only scroll if it's a different page
         if (_currentPageIndex != targetIndex) {
           _scrollToPageAndExpand(targetIndex, widget.statusToExpand);
         } else {
-          // If already on the target page, just expand the status if needed
           if (widget.statusToExpand != null) {
             widget.onScrollAndExpand(
               widget.sortedPageIds[targetIndex],
@@ -244,7 +223,7 @@ class _AllTasksViewState extends State<AllTasksView>
     final int todaysPageIndex = widget.sortedPageIds.indexOf(todaysPageId);
 
     if (_currentPageIndex == todaysPageIndex) {
-      _showPageSelectionSheet(); // If already on today's page, open sheet
+      _showPageSelectionSheet();
     } else {
       _scrollToPageAndExpand(todaysPageIndex, null);
     }
@@ -252,7 +231,6 @@ class _AllTasksViewState extends State<AllTasksView>
 
   void _scrollToPageAndExpand(int pageIndex, TaskStatus? statusToExpand) {
     if (pageIndex != -1 && pageIndex < widget.sortedPageIds.length) {
-      // If the target page is already the current page, just handle expansion and complete callback
       if (_currentPageIndex == pageIndex) {
         if (statusToExpand != null) {
           widget.onScrollAndExpand(
@@ -278,8 +256,6 @@ class _AllTasksViewState extends State<AllTasksView>
                 _currentPageIndex = pageIndex;
               });
             }
-            // Ensure the indicator is centered AFTER the page has fully settled.
-            // Using addPostFrameCallback ensures layout is done.
             SchedulerBinding.instance.addPostFrameCallback((_) {
               _scrollToCenterIndicator(pageIndex);
               if (statusToExpand != null) {
@@ -297,60 +273,46 @@ class _AllTasksViewState extends State<AllTasksView>
   }
 
   Future<void> _scrollToCenterIndicator(int selectedIndex) async {
-    // If the scroll controller isn't attached to a scrollable yet,
-    // or if an animation is already in progress, return.
     if (!_pageIndicatorScrollController.hasClients ||
         _isAnimatingIndicatorController) {
       return;
     }
 
-    // Determine the maximum scrollable extent of the indicator bar.
     final double maxScrollExtent =
         _pageIndicatorScrollController.position.maxScrollExtent;
-    // Get the current scroll offset of the indicator bar.
     final double currentScrollOffset = _pageIndicatorScrollController.offset;
 
-    // Calculate the total width of all indicators *before* the selected one.
     double precedingIndicatorsTotalWidth = 0.0;
     for (int i = 0; i < selectedIndex; i++) {
-      // Assuming all preceding indicators are unselected width
       precedingIndicatorsTotalWidth += _effectiveUnselectedIndicatorTotalWidth;
     }
-
-    // Calculate the target offset to bring the selected indicator to the center of the visible bar.
-    // This is done by:
-    // 1. Starting with the total width of preceding indicators.
-    // 2. Adding half the width of the selected indicator itself to get to its center.
-    // 3. Subtracting half the visible width of the indicator bar to center that point.
     double targetOffset =
         precedingIndicatorsTotalWidth +
         (_effectiveSelectedIndicatorTotalWidth / 2) -
         (_kVisibleIndicatorBarWidth / 2);
 
-    // Ensure the target offset is within the valid scroll range (0 to maxScrollExtent).
     targetOffset = targetOffset.clamp(0.0, maxScrollExtent);
-
-    // Only animate if the current offset is significantly different from the target offset
-    // to prevent unnecessary animations.
     if ((targetOffset - currentScrollOffset).abs() > 1.0) {
-      _isAnimatingIndicatorController =
-          true; // Set flag to indicate animation is active
+      _isAnimatingIndicatorController = true;
       await _pageIndicatorScrollController.animateTo(
         targetOffset,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      _isAnimatingIndicatorController = false; // Reset flag after animation
+      _isAnimatingIndicatorController = false;
     }
+  }
+
+  String myFormatDateFunction(DateTime? date) {
+    if (date == null) {
+      return 'N/A';
+    }
+    return DateFormat('MMM dd').format(date);
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final int? mostRecentPageId = widget.sortedPageIds.isNotEmpty
-        ? widget.sortedPageIds.first
-        : null;
-
     final int? todaysPageId = _findTodaysPageId();
     final bool isTodaySelected =
         _currentPageIndex == widget.sortedPageIds.indexOf(todaysPageId ?? -1);
@@ -359,116 +321,19 @@ class _AllTasksViewState extends State<AllTasksView>
       body: Column(
         children: [
           Expanded(
-            child: PageView.custom(
-              controller: _pageController,
-              scrollDirection: Axis.horizontal,
+            child: page_view_builder(
+              pageController: _pageController,
+              widget: widget,
               onPageChanged: (index) {
                 if (_currentPageIndex != index) {
                   setState(() {
                     _currentPageIndex = index;
                   });
-                  // Ensure this is called after the state update
                   SchedulerBinding.instance.addPostFrameCallback((_) {
-                    _scrollToCenterIndicator(
-                      index,
-                    ); // Scroll indicator to center
+                    _scrollToCenterIndicator(index);
                   });
                 }
               },
-              childrenDelegate: SliverChildBuilderDelegate((context, index) {
-                if (index < 0 || index >= widget.sortedPageIds.length) {
-                  return null;
-                }
-                final int pageId = widget.sortedPageIds[index];
-                final List<TaskDto> currentPageTasks =
-                    widget.tasksByPage[pageId]!;
-                final bool isMostRecentPage = pageId == mostRecentPageId;
-
-                return AnimatedBuilder(
-                  animation: _pageController,
-                  builder: (context, child) {
-                    double rotationY = 0.0; // Default to 0 rotation
-                    double scale = 1.0;
-                    double opacity = 1.0;
-
-                    if (_pageController.position.haveDimensions) {
-                      double pageOffset = (_pageController.page ?? 0.0) - index;
-                      double clampedOffset = pageOffset.clamp(
-                        -1.0,
-                        1.0,
-                      ); // Clamped more broadly for consistency
-
-                      // Ensure the rotation is applied correctly for pages off-screen
-                      if (clampedOffset.abs() > 0.001) {
-                        // Small epsilon to avoid tiny, unintended rotations
-                        rotationY =
-                            clampedOffset *
-                            (M.pi / 2); // Rotate up to 90 degrees (M.pi / 2)
-                      } else {
-                        rotationY = 0.0; // No rotation if exactly on page
-                      }
-
-                      scale = (1 - (clampedOffset.abs() * 0.1)).clamp(0.9, 1.0);
-                      opacity = (1 - clampedOffset.abs() * 0.3).clamp(0.1, 1.0);
-                    } else {
-                      // If dimensions are not available, return a non-transformed state
-                      // for the initial build to avoid visual glitches.
-                      return Opacity(
-                        opacity: 1.0,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            12.0,
-                            12.0,
-                            12.0,
-                            0,
-                          ),
-                          child: PageListItem(
-                            key: ValueKey('all_tasks-$pageId'),
-                            pageId: pageId,
-                            formatDate: widget.formatDate,
-                            currentPageTasks: currentPageTasks,
-                            isMostRecentPage: isMostRecentPage,
-                            getStatusColor: widget.getStatusColor,
-                            statusExpandedState: widget.statusExpandedState,
-                            currentBrightness: widget.currentBrightness,
-                            statusToExpand: widget.statusToExpand,
-                          ),
-                        ),
-                      );
-                    }
-
-                    return Transform(
-                      alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, 0.0015)
-                        ..rotateY(rotationY)
-                        ..scale(scale),
-                      child: Opacity(
-                        opacity: opacity,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            12.0,
-                            12.0,
-                            12.0,
-                            0,
-                          ),
-                          child: PageListItem(
-                            key: ValueKey('all_tasks-$pageId'),
-                            pageId: pageId,
-                            formatDate: widget.formatDate,
-                            currentPageTasks: currentPageTasks,
-                            isMostRecentPage: isMostRecentPage,
-                            getStatusColor: widget.getStatusColor,
-                            statusExpandedState: widget.statusExpandedState,
-                            currentBrightness: widget.currentBrightness,
-                            statusToExpand: widget.statusToExpand,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }, childCount: widget.sortedPageIds.length),
             ),
           ),
           Container(
@@ -541,7 +406,6 @@ class _AllTasksViewState extends State<AllTasksView>
 
                       return GestureDetector(
                         onTap: () {
-                          // Only animate if the target page is different
                           if (_currentPageIndex != index) {
                             _pageController
                                 .animateToPage(
@@ -554,7 +418,6 @@ class _AllTasksViewState extends State<AllTasksView>
                                     setState(() {
                                       _currentPageIndex = index;
                                     });
-                                    // Call to center the indicator after page animation completes
                                     SchedulerBinding.instance
                                         .addPostFrameCallback((_) {
                                           _scrollToCenterIndicator(index);
@@ -562,8 +425,6 @@ class _AllTasksViewState extends State<AllTasksView>
                                   }
                                 });
                           } else {
-                            // If tapping the current page's indicator, just ensure it's centered
-                            // and no page animation is needed.
                             SchedulerBinding.instance.addPostFrameCallback((_) {
                               _scrollToCenterIndicator(index);
                             });
@@ -598,9 +459,7 @@ class _AllTasksViewState extends State<AllTasksView>
                                   Expanded(
                                     child: Text(
                                       pageDate != null
-                                          ? widget.myFormatDateFunction(
-                                              pageDate,
-                                            )
+                                          ? myFormatDateFunction(pageDate)
                                           : 'N/A',
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(

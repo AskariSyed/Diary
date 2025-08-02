@@ -108,7 +108,7 @@
               "RelativeDocumentMoniker": "Controllers\\PagesController.cs",
               "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\PagesController.cs",
               "RelativeToolTip": "Controllers\\PagesController.cs",
-              "ViewState": "AgIAAMcAAAAAAAAAAAAuwNcAAAAYAAAAAAAAAA==",
+              "ViewState": "AgIAAGAAAAAAAAAAAADwv3AAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-26T08:27:58.967Z",
               "EditorCaption": ""
@@ -135,8 +135,7 @@
               "RelativeToolTip": "Data\\AppDbContext.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAEAAAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-26T08:23:56.919Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-26T08:23:56.919Z"
             },
             {
               "$type": "Document",
@@ -148,8 +147,7 @@
               "RelativeToolTip": "Models\\Diary.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-26T08:22:12.03Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-26T08:22:12.03Z"
             },
             {
               "$type": "Document",
@@ -161,8 +159,7 @@
               "RelativeToolTip": "DTOs\\DTO.cs",
               "ViewState": "AgIAAEkAAAAAAAAAAAAcwFEAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-26T08:26:15.533Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-26T08:26:15.533Z"
             },
             {
               "$type": "Document",
@@ -172,7 +169,7 @@
               "RelativeDocumentMoniker": "Controllers\\TasksController.cs",
               "ToolTip": "C:\\Users\\HP\\source\\repos\\Diary\\DiaryApi\\Controllers\\TasksController.cs",
               "RelativeToolTip": "Controllers\\TasksController.cs",
-              "ViewState": "AgIAANIAAAAAAAAAAAAIwLwAAAA9AAAAAAAAAA==",
+              "ViewState": "AgIAAFQAAAAAAAAAAAAwwF0AAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-26T08:28:10.377Z",
               "EditorCaption": ""

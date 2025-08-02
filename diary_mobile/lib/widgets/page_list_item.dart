@@ -1,10 +1,10 @@
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
+import 'package:diary_mobile/providers/page_provider.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:diary_mobile/widgets/task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 
 class PageListItem extends StatefulWidget {
   final int pageId;
@@ -18,6 +18,7 @@ class PageListItem extends StatefulWidget {
   final Brightness currentBrightness;
   final TaskStatus? statusToExpand;
   final int? pageToScrollTo;
+  final DateTime? pageDate;
 
   const PageListItem({
     super.key,
@@ -31,6 +32,7 @@ class PageListItem extends StatefulWidget {
     required this.currentBrightness,
     this.statusToExpand,
     this.pageToScrollTo,
+    required this.pageDate,
   });
 
   @override
@@ -38,34 +40,38 @@ class PageListItem extends StatefulWidget {
 }
 
 class _PageListItemState extends State<PageListItem> {
-  // Declare a ScrollController for this instance
   late final ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
-    // Initialize the controller
     _scrollController = ScrollController();
   }
 
   @override
   void dispose() {
-    // Dispose of the controller
     _scrollController.dispose();
     super.dispose();
   }
 
-  @override
-  void didUpdateWidget(covariant PageListItem oldWidget) {
-    super.didUpdateWidget(oldWidget);
+  void loadPagesAndPrint(PageProvider provider) async {
+    await provider.fetchPagesByDiary(1);
+    provider.printAllPageIdsWithDates();
   }
 
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
+    final pageProvider = Provider.of<PageProvider>(context, listen: false);
+    if (pageProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    pageProvider.printAllPageIdsWithDates();
+
+    // Get pageDate from tasks or fallback to PageProvider
     final pageDate = widget.currentPageTasks.isNotEmpty
         ? widget.currentPageTasks.first.pageDate
-        : null;
+        : pageProvider.getPageDateById(widget.pageId);
 
     final bool isTodayOrFuture =
         pageDate != null &&
@@ -85,11 +91,10 @@ class _PageListItemState extends State<PageListItem> {
               child: Row(
                 children: [
                   Text(
-                    '${widget.formatDate(pageDate)}',
+                    '${widget.formatDate(widget.pageDate)}',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      // HERE IS THE CHANGE:
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
@@ -97,7 +102,7 @@ class _PageListItemState extends State<PageListItem> {
                   IconButton(
                     onPressed: () =>
                         _showDatePickerAndCopyTasks(context, pageDate),
-                    icon: const Icon(Icons.move_to_inbox),
+                    icon: const Icon(Icons.move_down_rounded),
                     tooltip: 'Copy tasks from another day',
                   ),
                 ],
@@ -141,13 +146,10 @@ class _PageListItemState extends State<PageListItem> {
       initialDate: DateTime.now().subtract(const Duration(days: 1)),
       firstDate: DateTime(2000),
       lastDate: DateTime(DateTime.now().year + 10, 12, 31),
-      // Cannot copy from a future date
       helpText: 'Select date to copy tasks from',
       fieldLabelText: 'Source Date',
     );
-    if (selectedSourceDate == null) {
-      return;
-    }
+    if (selectedSourceDate == null) return;
 
     selectedSourceDate = DateUtils.dateOnly(selectedSourceDate);
     final DateTime cleanTargetDate = DateUtils.dateOnly(targetPageDate);
@@ -169,8 +171,7 @@ class _PageListItemState extends State<PageListItem> {
         title: const Text('Confirm Task Copy'),
         content: Text(
           'Are you sure you want to copy all uncompleted and undeleted tasks from '
-          '${widget.formatDate(selectedSourceDate)} to ' // Use the selected source date directly
-          '${widget.formatDate(cleanTargetDate)}?', // Use the clean target date
+          '${widget.formatDate(selectedSourceDate)} to ${widget.formatDate(cleanTargetDate)}?',
         ),
         actions: [
           TextButton(
@@ -185,9 +186,7 @@ class _PageListItemState extends State<PageListItem> {
       ),
     );
 
-    if (confirmCopy != true) {
-      return;
-    }
+    if (confirmCopy != true) return;
 
     try {
       await taskProvider.copyPageTasks(
@@ -230,8 +229,13 @@ class _PageListItemState extends State<PageListItem> {
                 .where((status) => status != TaskStatus.deleted)
                 .map((status) {
                   final tasksInStatus = widget.currentPageTasks
-                      .where((task) => task.status == status)
+                      .where(
+                        (task) =>
+                            task.status == status &&
+                            task.status != TaskStatus.deleted,
+                      )
                       .toList();
+
                   final String statusExpansionTileKey =
                       'status_${widget.pageId}_${status.index}';
                   final bool initialStatusExpanded =
@@ -262,16 +266,15 @@ class _PageListItemState extends State<PageListItem> {
                                 listen: false,
                               ).updateTaskStatus(draggedTask.id, status);
                             } catch (e) {
-                              Future.microtask(
-                                () =>
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Failed to update task status: $e',
-                                        ),
-                                      ),
+                              Future.microtask(() {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to update task status: $e',
                                     ),
-                              );
+                                  ),
+                                );
+                              });
                             }
                           },
                           builder: (context, candidateData, rejectedData) {
@@ -295,16 +298,17 @@ class _PageListItemState extends State<PageListItem> {
                                 ),
                                 initiallyExpanded: initialStatusExpanded,
                                 children: <Widget>[
-                                  Column(
-                                    children: tasksInStatus.map<Widget>((task) {
-                                      return buildTaskCard(
-                                        task,
-                                        taskProvider,
-                                        true,
-                                        context,
-                                      );
-                                    }).toList(),
-                                  ),
+                                  if (tasksInStatus.isNotEmpty)
+                                    Column(
+                                      children: tasksInStatus.map((task) {
+                                        return buildTaskCard(
+                                          task,
+                                          taskProvider,
+                                          true,
+                                          context,
+                                        );
+                                      }).toList(),
+                                    ),
                                   if (tasksInStatus.isEmpty)
                                     SizedBox(
                                       height: 50,

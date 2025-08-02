@@ -61,6 +61,7 @@ class TaskProvider with ChangeNotifier {
           }
           return a.id.compareTo(b.id);
         });
+        print('Task Fetched Successfully');
       } else {
         _setErrorMessage(
           'Failed to load tasks: Server responded with status ${response.statusCode}. Body: ${response.body}',

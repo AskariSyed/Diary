@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ShakeDialogContent extends StatefulWidget {
   final Widget child;
-  final bool shakeTrigger; // set true to trigger shake
+  final bool shakeTrigger;
 
   const ShakeDialogContent({
     super.key,

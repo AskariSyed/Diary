@@ -4,7 +4,6 @@ import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 Widget buildTaskCard(
   TaskDto task,
@@ -15,14 +14,7 @@ Widget buildTaskCard(
   Widget cardContent = Card(
     margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
     child: ListTile(
-      title: Text(
-        task.title,
-        style: TextStyle(
-          decoration: task.status == TaskStatus.complete
-              ? TextDecoration.lineThrough
-              : null,
-        ),
-      ),
+      title: Text(task.title),
       subtitle: Text(
         task.parentTaskCreatedAt != null
             ? 'Created At: ${task.parentTaskCreatedAt!.toLocal().toString().split('.').first}'

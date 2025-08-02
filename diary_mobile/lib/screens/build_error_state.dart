@@ -2,13 +2,12 @@ import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:diary_mobile/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:diary_mobile/mixin/taskstatus.dart'; // Import TaskStatus
+import 'package:diary_mobile/mixin/taskstatus.dart';
 
 class ErrorStateScreen extends StatefulWidget {
   final ThemeProvider themeProvider;
   final TaskProvider taskProvider;
   final int? scrollToPageId;
-  // REMOVED: final Map<int, bool> pageExpandedState; // This line is removed
   final String? fetchErrorMessage;
 
   const ErrorStateScreen({
@@ -16,7 +15,6 @@ class ErrorStateScreen extends StatefulWidget {
     required this.themeProvider,
     required this.taskProvider,
     required this.scrollToPageId,
-    // REMOVED: required this.pageExpandedState, // This line is removed
     required this.fetchErrorMessage,
   });
 
@@ -103,7 +101,6 @@ class _ErrorStateScreenState extends State<ErrorStateScreen>
               context,
               widget.taskProvider,
               widget.scrollToPageId,
-              // REMOVED: widget.pageExpandedState, // This line is removed
             ),
           ),
           IconButton(
