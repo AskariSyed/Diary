@@ -2,8 +2,8 @@ import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/widgets/filter_tab_bar.dart';
 import 'package:flutter/material.dart';
 
-class animated_switcher_main_tab_filter_tab extends StatelessWidget {
-  const animated_switcher_main_tab_filter_tab({
+class AnimatedSwitcherMainTabFilterTab extends StatelessWidget {
+  const AnimatedSwitcherMainTabFilterTab({
     super.key,
     required TabController mainTabController,
     required TabController filterTabController,
@@ -34,7 +34,7 @@ class animated_switcher_main_tab_filter_tab extends StatelessWidget {
       child: _mainTabController.index == 1
           ? Stack(
               children: [
-                filter_tab_bar(
+                FilterTabBar(
                   filterTabController: _filterTabController,
                   currentFilterStatus: _currentFilterStatus,
                   currentBrightness: currentBrightness,

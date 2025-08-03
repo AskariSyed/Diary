@@ -7,16 +7,14 @@ import '/models/task_dto.dart';
 import '/mixin/taskstatus.dart';
 import '/models/create_page_dto.dart';
 import '../models/task_history_dto.dart';
-import 'package:diary_mobile/providers/page_provider.dart'; // Import PageProvider
+import 'package:diary_mobile/providers/page_provider.dart';
 
 class TaskProvider with ChangeNotifier {
   List<TaskDto> _tasks = [];
   bool _isLoading = false;
   String? _errorMessage;
 
-  PageProvider? _pageProvider; // Add a field for PageProvider
-
-  // Setter for PageProvider
+  PageProvider? _pageProvider;
   set pageProvider(PageProvider? provider) {
     _pageProvider = provider;
   }
@@ -272,11 +270,9 @@ class TaskProvider with ChangeNotifier {
         newPageId = responseData['pageId'] as int;
         await fetchTasks();
         if (_pageProvider != null) {
-          await _pageProvider!.fetchPagesByDiary(
-            diaryNo,
-          ); // Ensure this is awaited
+          await _pageProvider!.fetchPagesByDiary(diaryNo);
         }
-        notifyListeners(); // <-- NEW LINE: Notify TaskProvider listeners again after PageProvider updates
+        notifyListeners();
       } else {
         String errorMessage = 'Failed to create new page.';
         if (response.statusCode == 404) {

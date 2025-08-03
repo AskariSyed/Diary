@@ -6,8 +6,8 @@ import 'package:diary_mobile/screens/tabs/all_tasks_view.dart';
 import 'package:diary_mobile/widgets/page_list_item.dart';
 import 'package:flutter/material.dart';
 
-class page_view_builder extends StatelessWidget {
-  const page_view_builder({
+class PageViewBuilder extends StatelessWidget {
+  const PageViewBuilder({
     super.key,
     required PageController pageController,
     required this.widget,

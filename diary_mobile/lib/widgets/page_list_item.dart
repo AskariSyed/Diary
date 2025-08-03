@@ -69,8 +69,6 @@ class _PageListItemState extends State<PageListItem> {
       return const Center(child: CircularProgressIndicator());
     }
     pageProvider.printAllPageIdsWithDates();
-
-    // Get pageDate from tasks or fallback to PageProvider
     final pageDate = widget.currentPageTasks.isNotEmpty
         ? widget.currentPageTasks.first.pageDate
         : pageProvider.getPageDateById(widget.pageId);

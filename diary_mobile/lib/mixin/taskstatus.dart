@@ -30,7 +30,6 @@ extension TaskStatusExtension on TaskStatus {
     }
   }
 
-  // A static method to create from a string
   static TaskStatus fromApiString(String statusString) {
     switch (statusString) {
       case 'Backlog':
@@ -64,33 +63,23 @@ extension StringToTaskStatusExtension on String {
   }
 }
 
-// This is the correct way to implement a custom controller for ExpansionTile
 class DiaryExpansionTileController extends ChangeNotifier
     implements ExpansibleController {
   AnimationController? _animationController;
-  bool _isExpanded = false; // Internal state to track expansion
+  bool _isExpanded = false;
 
   @override
   bool get isExpanded => _isExpanded;
-
-  // Called by ExpansionTile to provide its internal AnimationController
-  // This method is part of the ExpansionTileController interface
-
   void attach(AnimationController controller) {
     if (_animationController == controller) {
-      return; // Already attached to this controller
+      return;
     }
-    _animationController?.removeListener(
-      _handleAnimationChange,
-    ); // Clean up old listener
+    _animationController?.removeListener(_handleAnimationChange);
     _animationController = controller;
     _animationController!.addListener(_handleAnimationChange);
-    // Initialize _isExpanded based on the current state of the animation controller
+
     _isExpanded = _animationController!.value == 1.0;
   }
-
-  // Called by ExpansionTile when it's detached (e.g., widget removed from tree)
-  // This method is part of the ExpansionTileController interface
 
   void detach() {
     _animationController?.removeListener(_handleAnimationChange);
@@ -98,11 +87,9 @@ class DiaryExpansionTileController extends ChangeNotifier
   }
 
   void _handleAnimationChange() {
-    // Determine expanded state based on animation value
     final bool newExpandedState = _animationController!.value == 1.0;
     if (_isExpanded != newExpandedState) {
       _isExpanded = newExpandedState;
-      // Notify listeners (e.g., your UI or state managers)
       notifyListeners();
     }
   }
@@ -114,13 +101,12 @@ class DiaryExpansionTileController extends ChangeNotifier
       return;
     }
     if (_animationController!.status != AnimationStatus.completed) {
-      // Defer the animation call to the next frame to avoid conflicts during build
       Future.microtask(() {
         if (_animationController != null &&
             _animationController!.status != AnimationStatus.completed) {
           _animationController!.forward();
-          _isExpanded = true; // Optimistic update
-          notifyListeners(); // Notify listeners of the state change
+          _isExpanded = true;
+          notifyListeners();
         }
       });
     }
@@ -133,13 +119,12 @@ class DiaryExpansionTileController extends ChangeNotifier
       return;
     }
     if (_animationController!.status != AnimationStatus.dismissed) {
-      // Defer the animation call to the next frame
       Future.microtask(() {
         if (_animationController != null &&
             _animationController!.status != AnimationStatus.dismissed) {
           _animationController!.reverse();
-          _isExpanded = false; // Optimistic update
-          notifyListeners(); // Notify listeners of the state change
+          _isExpanded = false;
+          notifyListeners();
         }
       });
     }

@@ -78,7 +78,7 @@ class _ErrorStateScreenState extends State<ErrorStateScreen>
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: TextField(
-                readOnly: true, // Make it read-only
+                readOnly: true,
                 decoration: InputDecoration(
                   hintText: 'Search tasks...',
                   border: OutlineInputBorder(

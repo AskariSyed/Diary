@@ -19,8 +19,6 @@ import '/models/task_dto.dart';
 import '/mixin/taskstatus.dart';
 import '/providers/task_provider.dart';
 import '/providers/theme_provider.dart';
-import 'package:diary_mobile/providers/page_provider.dart';
-
 import 'package:diary_mobile/screens/tabs/all_tasks_view.dart'
     hide ExpansibleController;
 import 'package:diary_mobile/screens/tabs/status_tasks_view.dart';
@@ -126,24 +124,13 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   }
 
   void _onPageProviderChange() {
-    // This listener will be triggered whenever _pages in PageProvider changes
-    // after fetchPagesByDiary is called (which happens in TaskProvider's createNewPage)
     if (_pageProvider.pages.length > (_previousPageCount ?? 0)) {
-      // A new page has been added
       final int? newPageId = _pageProvider.pages.isNotEmpty
-          ? _pageProvider
-                .pages
-                .last
-                .pageId // Assuming new pages are added to the end or you have a way to identify the newest one
+          ? _pageProvider.pages.last.pageId
           : null;
 
       if (newPageId != null) {
-        // You might want to scroll to the newly created page
-        // and potentially expand a default status (e.g., backlog)
-        _scrollToPageAndStatus(
-          newPageId,
-          TaskStatus.backlog,
-        ); // Or any other default status
+        _scrollToPageAndStatus(newPageId, TaskStatus.backlog);
       }
     }
     _previousPageCount = _pageProvider.pages.length;
@@ -232,11 +219,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   Future<void> _fetchTasksWithErrorHandling() async {
     try {
       await Provider.of<TaskProvider>(context, listen: false).fetchTasks();
-      // Also fetch pages to ensure PageProvider is up-to-date
+
       await Provider.of<PageProvider>(
         context,
         listen: false,
-      ).fetchPagesByDiary(1); // Assuming diaryId is 1
+      ).fetchPagesByDiary(1);
 
       setState(() {
         _fetchErrorMessage = null;
@@ -311,15 +298,30 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   }
 
   void _scrollToPageAndStatus(int pageId, TaskStatus status) {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.clear();
+    _searchController.addListener(_onSearchChanged);
+
     setState(() {
+      // All state changes are now in one place
       _isSearching = false;
       _isScrollingFromSearch = true;
       _pageToScrollTo = pageId;
       _statusToExpand = status;
-      _clearSearch();
-
       _scrollTrigger++;
+
+      // Logic from _clearSearch() is merged here
+      _selectedDate = null;
+      _isFiltering = false;
+      _filteredTasks = [];
+      _statusExpandedState.clear();
+      for (var controller in _expansionTileControllers.values) {
+        if (controller.isExpanded) {
+          controller.collapse();
+        }
+      }
     });
+
     if (_mainTabController.index != 0) {
       print('TaskBoardScreen: Switching to All Tasks tab.');
       if (mounted) {
@@ -330,31 +332,35 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         );
       }
     }
-  }
+  } // task_board_screen.dart
 
+  // ...
   void _onScrollAndExpand(int pageId, TaskStatus status) {
-    setState(() {
-      _statusExpandedState.clear();
-      _statusExpandedState['status_${pageId}_${status.index}'] = true;
-    });
+    // Safely schedules the code to run after the build is complete.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-    final String statusKey = 'status_${pageId}_${status.index}';
-    final ExpansibleController? statusController =
-        _expansionTileControllers[statusKey];
-    if (statusController != null && !statusController.isExpanded) {
-      print('TaskBoardScreen: Expanding status tile for key: $statusKey');
-      Future.microtask(() {
-        if (mounted) statusController.expand();
+      final String statusKey = 'status_${pageId}_${status.index}';
+      final ExpansibleController? statusController =
+          _expansionTileControllers[statusKey];
+
+      if (statusController != null && !statusController.isExpanded) {
+        print('TaskBoardScreen: Expanding status tile for key: $statusKey');
+        statusController.expand();
+      }
+
+      // Consolidate state changes into a single call
+      setState(() {
+        _statusExpandedState.clear();
+        _statusExpandedState[statusKey] = true;
+        _pageToScrollTo = null;
+        _statusToExpand = null;
+        _isScrollingFromSearch = false;
       });
-    }
-
-    setState(() {
-      _pageToScrollTo = null;
-      _statusToExpand = null;
-      _isScrollingFromSearch = false;
     });
   }
 
+  // ...
   void _handleDragStarted() {
     setState(() {
       _isDraggingTask = true;
@@ -379,7 +385,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     _searchController.dispose();
     _mainTabController.dispose();
     _filterTabController.dispose();
-    _pageProvider.removeListener(_onPageProviderChange); // Dispose listener
+    _pageProvider.removeListener(_onPageProviderChange);
     for (var controller in _expansionTileControllers.values) {
       controller.dispose();
     }
@@ -508,11 +514,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                     context,
                     listen: false,
                   ).fetchTasks();
-                  // Also refresh pages after tasks are fetched
+
                   await Provider.of<PageProvider>(
                     context,
                     listen: false,
-                  ).fetchPagesByDiary(1); // Assuming diaryId is 1
+                  ).fetchPagesByDiary(1);
 
                   showTopSnackBar(
                     Overlay.of(context),
@@ -525,10 +531,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               IconButton(
                 icon: const Icon(Icons.note_add),
                 tooltip: 'Add New Page',
-                onPressed: () => showAddPageDialog(
-                  context,
-                  taskProvider,
-                ), // Removed scrollToPageId parameter
+                onPressed: () => showAddPageDialog(context, taskProvider),
               ),
               IconButton(
                 icon: Icon(
@@ -547,8 +550,8 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
               ),
               child: Column(
                 children: [
-                  main_tab_bar(mainTabController: _mainTabController),
-                  animated_switcher_main_tab_filter_tab(
+                  MainTabBar(mainTabController: _mainTabController),
+                  AnimatedSwitcherMainTabFilterTab(
                     mainTabController: _mainTabController,
                     filterTabController: _filterTabController,
                     currentFilterStatus: _currentFilterStatus,
@@ -588,10 +591,12 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                       pageToScrollTo: _pageToScrollTo,
                       statusToExpand: _statusToExpand,
                       onScrollComplete: () {
-                        setState(() {
-                          _pageToScrollTo = null;
-                          _statusToExpand = null;
-                          _isScrollingFromSearch = false;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          setState(() {
+                            _pageToScrollTo = null;
+                            _statusToExpand = null;
+                            _isScrollingFromSearch = false;
+                          });
                         });
                       },
                       onScrollAndExpand: _onScrollAndExpand,
@@ -660,7 +665,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 ),
               ),
               if (_isDraggingTask)
-                Drag_drop_target(
+                DragDropTarget(
                   taskProvider: taskProvider,
                   currentBrightness: currentBrightness,
                 ),

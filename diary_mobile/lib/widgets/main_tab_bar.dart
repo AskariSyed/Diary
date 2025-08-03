@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 
-class main_tab_bar extends StatelessWidget {
-  const main_tab_bar({super.key, required TabController mainTabController})
+class MainTabBar extends StatelessWidget {
+  const MainTabBar({super.key, required TabController mainTabController})
     : _mainTabController = mainTabController;
 
   final TabController _mainTabController;

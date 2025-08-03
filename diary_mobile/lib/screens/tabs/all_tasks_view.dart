@@ -320,7 +320,7 @@ class _AllTasksViewState extends State<AllTasksView>
       body: Column(
         children: [
           Expanded(
-            child: page_view_builder(
+            child: PageViewBuilder(
               pageController: _pageController,
               widget: widget,
               onPageChanged: (index) {

@@ -145,14 +145,10 @@ class _StatusTasksViewState extends State<StatusTasksView> {
         }
       }
     }
-
-    // Filter final list based on filterStatus
     final List<TaskDto> filteredTasksForTab = [
-      // Include only most recent past/today tasks matching filterStatus
       ...mostRecentPastOrToday.values.where(
         (task) => task.status == widget.filterStatus,
       ),
-      // Include all future tasks matching filterStatus
       ...futureTasks.where((task) => task.status == widget.filterStatus),
     ]..sort((a, b) => b.parentTaskCreatedAt!.compareTo(a.parentTaskCreatedAt!));
 
@@ -161,11 +157,8 @@ class _StatusTasksViewState extends State<StatusTasksView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Using getStatusIcon to display a relevant icon based on the filter status
             Icon(
-              getStatusIcon(
-                widget.filterStatus,
-              ), // Dynamic icon based on status
+              getStatusIcon(widget.filterStatus),
               size: 80,
               color: getStatusColor(widget.filterStatus, brightness),
             ),
@@ -184,7 +177,7 @@ class _StatusTasksViewState extends State<StatusTasksView> {
       itemCount: filteredTasksForTab.length,
       itemBuilder: (context, index) {
         final task = filteredTasksForTab[index];
-        // Wrap each task Card with LongPressDraggable
+
         return LongPressDraggable<TaskDto>(
           data: task,
           feedback: Material(

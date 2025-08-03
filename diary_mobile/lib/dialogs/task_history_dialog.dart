@@ -1,10 +1,10 @@
 import 'package:diary_mobile/widgets/status_dropTarget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // Import for DateFormat
+import 'package:intl/intl.dart';
 import '../models/task_history_dto.dart';
 import '../providers/task_provider.dart';
-import 'package:diary_mobile/mixin/taskstatus.dart'; // Import the file containing getStatusIcon and getStatusColor
+import 'package:diary_mobile/mixin/taskstatus.dart';
 
 class TaskHistoryDialog extends StatefulWidget {
   final int taskId;
@@ -29,7 +29,6 @@ class _TaskHistoryDialogState extends State<TaskHistoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the current theme brightness to determine appropriate status colors
     final Brightness currentBrightness = Theme.of(context).brightness;
 
     return AlertDialog(
@@ -47,24 +46,19 @@ class _TaskHistoryDialogState extends State<TaskHistoryDialog> {
               return const Text("No history available for this task.");
             } else {
               final history = snapshot.data!;
-              // Get the parent task's creation date from the first history item.
-              // It's assumed to be the same for all entries of a single parent task.
               final DateTime? parentTaskCreationDate = history.isNotEmpty
                   ? history.first.parentTaskCreatedAt
                   : null;
 
               final String formattedParentTaskCreationDate =
                   parentTaskCreationDate != null
-                  ? DateFormat('yyyy-MM-dd').format(
-                      parentTaskCreationDate,
-                    ) // Format including time for creation date
-                  : 'N/A'; // Fallback if the date is null
+                  ? DateFormat('yyyy-MM-dd').format(parentTaskCreationDate)
+                  : 'N/A';
 
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Display the original task creation date at the top of the dialog
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
                     child: Text(
@@ -72,9 +66,8 @@ class _TaskHistoryDialogState extends State<TaskHistoryDialog> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  const Divider(), // A visual separator
+                  const Divider(),
                   Flexible(
-                    // Allows the ListView to take available space
                     child: ListView.builder(
                       shrinkWrap: true,
                       itemCount: history.length,
@@ -84,8 +77,6 @@ class _TaskHistoryDialogState extends State<TaskHistoryDialog> {
                         final String formattedPageDate = DateFormat(
                           'yyyy-MM-dd',
                         ).format(item.pageDate);
-
-                        // Convert status string to TaskStatus enum for styling functions
                         final TaskStatus taskStatusEnum = item.status
                             .fromApiString();
                         final Color statusColor = getStatusColor(
@@ -109,8 +100,7 @@ class _TaskHistoryDialogState extends State<TaskHistoryDialog> {
                           child: ListTile(
                             leading: Icon(
                               statusIcon,
-                              color:
-                                  statusColor, // Apply status-specific color to the icon
+                              color: statusColor,
                               size: 30,
                             ),
                             title: Text(
@@ -120,10 +110,8 @@ class _TaskHistoryDialogState extends State<TaskHistoryDialog> {
                               ), // Make title bold
                             ),
                             subtitle: Column(
-                              // Use Column for vertical arrangement within subtitle
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Use Text.rich to apply color and bold to only the status text
                                 Text.rich(
                                   TextSpan(
                                     children: [
@@ -132,20 +120,16 @@ class _TaskHistoryDialogState extends State<TaskHistoryDialog> {
                                         text: item.status,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color:
-                                              statusColor, // Apply status-specific color to the status text
+                                          color: statusColor,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                Text(
-                                  "Page Date: $formattedPageDate",
-                                ), // Display page date
+                                Text("Page Date: $formattedPageDate"),
                               ],
                             ),
-                            isThreeLine:
-                                false, // Adjusted as subtitle now fits neatly on two lines
+                            isThreeLine: false,
                           ),
                         );
                       },

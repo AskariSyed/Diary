@@ -16,7 +16,7 @@ class TaskDto {
     required this.title,
     required this.status,
     this.pageDate,
-    this.parentTaskCreatedAt, // NEW
+    this.parentTaskCreatedAt,
   });
 
   factory TaskDto.fromJson(Map<String, dynamic> json) {
@@ -54,7 +54,7 @@ class TaskDto {
     String? title,
     TaskStatus? status,
     DateTime? pageDate,
-    DateTime? parentTaskCreatedAt, // NEW
+    DateTime? parentTaskCreatedAt,
   }) {
     return TaskDto(
       id: id ?? this.id,

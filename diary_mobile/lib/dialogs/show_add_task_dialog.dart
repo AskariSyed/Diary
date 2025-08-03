@@ -3,6 +3,8 @@ import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 void showAddTaskDialog(BuildContext context) {
   final TextEditingController taskTitleController = TextEditingController();
@@ -27,14 +29,11 @@ void showAddTaskDialog(BuildContext context) {
                   autofocus: true,
                 ),
                 const SizedBox(height: 20),
-
-                // --- Improved Date Picker UI ---
                 InkWell(
                   onTap: () async {
                     final DateTime? picked = await showDatePicker(
                       context: context,
-                      initialDate:
-                          selectedDate, // Start with the current selection
+                      initialDate: selectedDate,
                       firstDate: DateTime(2020),
                       lastDate: DateTime(2100),
                     );
@@ -111,7 +110,7 @@ void showAddTaskDialog(BuildContext context) {
                     );
 
                     int? pageId = await taskProvider.getPagebyDate(
-                      1, // Assuming diaryId is 1
+                      1,
                       selectedDate,
                     );
 
@@ -130,13 +129,19 @@ void showAddTaskDialog(BuildContext context) {
                       pageId: pageId,
                     );
 
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(content: Text('Task added successfully!')),
+                    showTopSnackBar(
+                      Overlay.of(context),
+                      const CustomSnackBar.success(
+                        message: 'Task Added Successfully',
+                      ),
+                      displayDuration: Durations.short1,
                     );
                     navigator.pop();
                   } catch (e) {
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(content: Text('Failed to add task: $e')),
+                    showTopSnackBar(
+                      Overlay.of(context),
+                      CustomSnackBar.error(message: "Failed to add task: $e"),
+                      displayDuration: Durations.short1,
                     );
                   }
                 },

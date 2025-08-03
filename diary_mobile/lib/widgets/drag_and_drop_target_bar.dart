@@ -1,12 +1,10 @@
-// lib/widgets/drag_and_drop_target_bar.dart
-
 import 'package:flutter/material.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:diary_mobile/widgets/status_dropTarget.dart';
 
-class Drag_drop_target extends StatelessWidget {
-  const Drag_drop_target({
+class DragDropTarget extends StatelessWidget {
+  const DragDropTarget({
     super.key,
     required this.taskProvider,
     required this.currentBrightness,
