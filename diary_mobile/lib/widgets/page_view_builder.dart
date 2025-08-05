@@ -1,4 +1,4 @@
-import 'dart:math' as M;
+import 'dart:math' as m;
 
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
@@ -50,7 +50,7 @@ class PageViewBuilder extends StatelessWidget {
               num clampedOffset = pageOffset.clamp(-1.0, 1.0);
 
               if (clampedOffset.abs() > 0.001) {
-                rotationY = clampedOffset * (M.pi);
+                rotationY = clampedOffset * (m.pi);
               } else {
                 rotationY = 0.0;
               }

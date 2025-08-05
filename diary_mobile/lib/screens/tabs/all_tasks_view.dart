@@ -337,8 +337,8 @@ class _AllTasksViewState extends State<AllTasksView>
           ),
           Container(
             height: _kPageIndicatorHeight,
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            margin: const EdgeInsets.only(bottom: 10.0),
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            margin: const EdgeInsets.only(bottom: 4.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

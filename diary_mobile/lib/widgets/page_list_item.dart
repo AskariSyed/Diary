@@ -78,7 +78,8 @@ class _PageListItemState extends State<PageListItem> {
         !pageDate.isBefore(DateUtils.dateOnly(DateTime.now()));
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 2),
+
       child: Card(
         elevation: 6.0,
         margin: EdgeInsets.zero,
@@ -87,13 +88,14 @@ class _PageListItemState extends State<PageListItem> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(4.0),
               child: Row(
                 children: [
+                  SizedBox(width: 10),
                   Text(
                     '${widget.formatDate(widget.pageDate)}',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -108,7 +110,7 @@ class _PageListItemState extends State<PageListItem> {
                 ],
               ),
             ),
-            const Divider(height: 1, thickness: 1),
+            const Divider(height: 0.01, thickness: 0.5),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -232,6 +234,22 @@ class _PageListItemState extends State<PageListItem> {
                             task.status != TaskStatus.deleted,
                       )
                       .toList();
+
+                  tasksInStatus.sort((a, b) {
+                    if (a.parentTaskCreatedAt == null &&
+                        b.parentTaskCreatedAt == null) {
+                      return 0;
+                    }
+                    if (a.parentTaskCreatedAt == null) {
+                      return 1;
+                    }
+                    if (b.parentTaskCreatedAt == null) {
+                      return -1;
+                    }
+                    return b.parentTaskCreatedAt!.compareTo(
+                      a.parentTaskCreatedAt!,
+                    );
+                  });
 
                   final String statusExpansionTileKey =
                       'status_${widget.pageId}_${status.index}';

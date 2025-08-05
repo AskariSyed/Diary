@@ -1,4 +1,3 @@
-// task_board_screen.dart
 import 'dart:ui';
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
 import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
@@ -534,12 +533,18 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 onPressed: () => showAddPageDialog(context, taskProvider),
               ),
               IconButton(
-                icon: Icon(
-                  themeProvider.themeMode == ThemeMode.light
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-                ),
                 onPressed: themeProvider.toggleTheme,
+                icon: AnimatedSwitcher(
+                  duration: Duration(milliseconds: 1200),
+                  transitionBuilder: (child, animation) =>
+                      RotationTransition(turns: animation, child: child),
+                  child: Icon(
+                    themeProvider.themeMode == ThemeMode.light
+                        ? Icons.light_mode_rounded
+                        : Icons.dark_mode_rounded,
+                    key: ValueKey(themeProvider.themeMode),
+                  ),
+                ),
               ),
             ],
             bottom: PreferredSize(

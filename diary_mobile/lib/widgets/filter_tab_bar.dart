@@ -18,6 +18,7 @@ class FilterTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TabBar(
+      tabAlignment: TabAlignment.start,
       key: const ValueKey('filterTabBar'),
       controller: _filterTabController,
       isScrollable: true,

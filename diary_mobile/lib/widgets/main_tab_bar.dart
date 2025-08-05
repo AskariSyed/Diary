@@ -1,5 +1,3 @@
-// lib/widgets/main_tab_bar.dart
-
 import 'package:flutter/material.dart';
 
 class MainTabBar extends StatelessWidget {

@@ -1,5 +1,3 @@
-// lib/widgets/task_board_app_bar.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';

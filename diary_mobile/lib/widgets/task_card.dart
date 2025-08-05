@@ -3,6 +3,7 @@ import 'package:diary_mobile/dialogs/task_history_dialog.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
+import 'package:diary_mobile/utils/task_helpers.dart';
 import 'package:flutter/material.dart';
 
 Widget buildTaskCard(
@@ -17,7 +18,7 @@ Widget buildTaskCard(
       title: Text(task.title),
       subtitle: Text(
         task.parentTaskCreatedAt != null
-            ? 'Created At: ${task.parentTaskCreatedAt!.toLocal().toString().split('.').first}'
+            ? '${formatDate(task.parentTaskCreatedAt!).toString().split('.').first}'
             : 'Created At: Unknown',
         style: const TextStyle(color: Colors.grey),
       ),
