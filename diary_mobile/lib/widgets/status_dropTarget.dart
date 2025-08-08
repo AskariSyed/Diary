@@ -88,22 +88,22 @@ Widget buildStatusDropTarget(
 
 Color getStatusColor(TaskStatus status, Brightness brightness) {
   final lightColors = {
-    TaskStatus.backlog: const Color.fromARGB(255, 221, 128, 81),
-    TaskStatus.toDiscuss: const Color.fromARGB(255, 222, 184, 70),
-    TaskStatus.inProgress: const Color.fromARGB(255, 169, 141, 218),
-    TaskStatus.onHold: const Color.fromARGB(255, 207, 65, 65),
-    TaskStatus.complete: const Color.fromARGB(255, 117, 217, 122),
-    TaskStatus.toFollowUp: const Color.fromARGB(255, 124, 196, 189),
+    TaskStatus.backlog: const Color.fromARGB(255, 225, 225, 221),
+    TaskStatus.toDiscuss: const Color.fromARGB(255, 229, 219, 201),
+    TaskStatus.inProgress: const Color.fromARGB(255, 154, 194, 213),
+    TaskStatus.onHold: const Color.fromARGB(255, 213, 158, 148),
+    TaskStatus.complete: const Color.fromARGB(255, 173, 202, 174),
+    TaskStatus.toFollowUp: const Color.fromARGB(255, 180, 204, 195),
     TaskStatus.deleted: const Color.fromARGB(255, 251, 0, 0),
   };
 
   final darkColors = {
-    TaskStatus.backlog: const Color.fromARGB(255, 220, 150, 150),
-    TaskStatus.toDiscuss: const Color.fromARGB(255, 215, 181, 56),
-    TaskStatus.inProgress: const Color.fromARGB(255, 158, 128, 230),
-    TaskStatus.onHold: const Color.fromARGB(255, 230, 135, 235),
-    TaskStatus.complete: const Color.fromARGB(255, 77, 212, 77),
-    TaskStatus.toFollowUp: const Color.fromARGB(255, 60, 218, 208),
+    TaskStatus.backlog: const Color.fromARGB(255, 165, 105, 162),
+    TaskStatus.toDiscuss: const Color.fromARGB(182, 99, 83, 53),
+    TaskStatus.inProgress: const Color.fromARGB(255, 117, 173, 199),
+    TaskStatus.onHold: const Color.fromARGB(255, 213, 158, 148),
+    TaskStatus.complete: const Color.fromARGB(255, 65, 103, 66),
+    TaskStatus.toFollowUp: const Color.fromARGB(255, 89, 152, 128),
     TaskStatus.deleted: const Color.fromARGB(255, 251, 0, 0),
   };
 

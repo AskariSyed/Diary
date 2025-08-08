@@ -21,7 +21,7 @@ class MainTabBar extends StatelessWidget {
                   Icons.book,
                   size: 19,
                   color: _mainTabController.index == 0
-                      ? Colors.deepPurple
+                      ? const Color.fromARGB(255, 94, 79, 230)
                       : Colors.grey,
                 ),
                 Text(
@@ -29,7 +29,7 @@ class MainTabBar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     color: _mainTabController.index == 0
-                        ? Colors.deepPurple
+                        ? const Color.fromARGB(255, 94, 79, 230)
                         : Colors.grey,
                   ),
                   textAlign: TextAlign.center,
@@ -44,17 +44,17 @@ class MainTabBar extends StatelessWidget {
             children: [
               Icon(
                 Icons.filter_list,
-                size: 18,
+                size: 24,
                 color: _mainTabController.index == 1
-                    ? Colors.deepPurple
+                    ? const Color.fromARGB(255, 94, 79, 230)
                     : Colors.grey,
               ),
               Text(
                 'Filters',
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 11,
                   color: _mainTabController.index == 1
-                      ? Colors.deepPurple
+                      ? const Color.fromARGB(255, 94, 79, 230)
                       : Colors.grey,
                 ),
                 textAlign: TextAlign.center,

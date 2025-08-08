@@ -17,7 +17,7 @@ Widget buildLoadingScreen(
       title: Text(
         'E-Diary',
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: Colors.deepPurple,
+          color: const Color.fromARGB(255, 94, 79, 230),
           fontWeight: FontWeight.bold,
         ),
       ),

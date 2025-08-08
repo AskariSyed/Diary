@@ -13,6 +13,17 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
     });
 });
 
+// ✅ CORS Setup (Add this)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Add DbContext to the services container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -25,15 +36,18 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// ✅ Use the CORS policy
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 app.MapControllers();
+app.UseCors("AllowAll");
 
 app.Run();

@@ -34,6 +34,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   final Map<String, bool> _statusExpandedState = {};
   final Map<String, ExpansibleController> _expansionTileControllers = {};
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? _fetchErrorMessage;
   int _scrollTrigger = 0;
 
@@ -445,6 +446,123 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       length: 2,
       child: SafeArea(
         child: Scaffold(
+          key: _scaffoldKey,
+          drawer: Drawer(
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: 170,
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.blue,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 38,
+                        backgroundImage: NetworkImage(
+                          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3kSFAMZTdIf5BWZ9HSYuwIh2ZJ_gUyuKN7w&s',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Askari Syed',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        '+92 312-0000511',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Main content scrollable
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      const ListTile(
+                        leading: Icon(Icons.home),
+                        title: Text('Home'),
+                      ),
+                      const ListTile(
+                        leading: Icon(Icons.person),
+                        title: Text('Profile'),
+                      ),
+
+                      ListTile(
+                        leading: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 800),
+                          transitionBuilder: (child, animation) =>
+                              RotationTransition(
+                                turns: Tween<double>(begin: 0.75, end: 1)
+                                    .animate(
+                                      CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeInOut,
+                                      ),
+                                    ),
+                                child: child,
+                              ),
+                          child: Icon(
+                            themeProvider.themeMode == ThemeMode.light
+                                ? Icons.light_mode
+                                : Icons.dark_mode,
+                            key: ValueKey(themeProvider.themeMode),
+                            color: themeProvider.themeMode == ThemeMode.light
+                                ? Colors.orange
+                                : Colors.blueGrey,
+                          ),
+                        ),
+                        title: const Text('Toggle Theme'),
+                        trailing: Switch(
+                          value: themeProvider.themeMode == ThemeMode.dark,
+                          activeColor: const Color.fromARGB(255, 152, 105, 233),
+                          activeTrackColor: Color.fromARGB(255, 53, 45, 130),
+                          inactiveThumbColor: Colors.grey,
+                          inactiveTrackColor: Colors.grey[300],
+                          onChanged: (bool value) async {
+                            await Future.delayed(
+                              const Duration(milliseconds: 100),
+                            );
+                            themeProvider.toggleTheme();
+                          },
+                        ),
+                      ),
+
+                      const ListTile(
+                        leading: Icon(Icons.menu_book),
+                        title: Text('User Manual'),
+                      ),
+                      const ListTile(
+                        leading: Icon(Icons.info),
+                        title: Text('About'),
+                      ),
+                      const ListTile(
+                        leading: Icon(Icons.help),
+                        title: Text('Help'),
+                      ),
+                      const ListTile(
+                        leading: Icon(Icons.feedback),
+                        title: Text('Feedback'),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                const ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Logout'),
+                ),
+              ],
+            ),
+          ),
           appBar: AppBar(
             backgroundColor:
                 Theme.of(context).appBarTheme.backgroundColor ??
@@ -468,12 +586,13 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                     ),
                   )
                 : const Text(
-                    'E-Diary',
+                    'PTA e-Diary',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.deepPurple,
+                      color: Color.fromARGB(255, 94, 79, 230),
                     ),
                   ),
+
             leading: _isSearching
                 ? IconButton(
                     icon: const Icon(Icons.close),
@@ -532,20 +651,20 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 tooltip: 'Add New Page',
                 onPressed: () => showAddPageDialog(context, taskProvider),
               ),
-              IconButton(
-                onPressed: themeProvider.toggleTheme,
-                icon: AnimatedSwitcher(
-                  duration: Duration(milliseconds: 1200),
-                  transitionBuilder: (child, animation) =>
-                      RotationTransition(turns: animation, child: child),
-                  child: Icon(
-                    themeProvider.themeMode == ThemeMode.light
-                        ? Icons.light_mode_rounded
-                        : Icons.dark_mode_rounded,
-                    key: ValueKey(themeProvider.themeMode),
-                  ),
-                ),
-              ),
+              // IconButton(
+              //   onPressed: themeProvider.toggleTheme,
+              //   icon: AnimatedSwitcher(
+              //     duration: Duration(milliseconds: 1200),
+              //     transitionBuilder: (child, animation) =>
+              //         RotationTransition(turns: animation, child: child),
+              //     child: Icon(
+              //       themeProvider.themeMode == ThemeMode.light
+              //           ? Icons.light_mode_rounded
+              //           : Icons.dark_mode_rounded,
+              //       key: ValueKey(themeProvider.themeMode),
+              //     ),
+              //   ),
+              // ),
             ],
             bottom: PreferredSize(
               preferredSize: Size.fromHeight(
@@ -658,17 +777,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   ],
                 ),
               ),
-              Positioned(
-                right: 16.0,
-                bottom: 16.0,
-                child: FloatingActionButton(
-                  child: const Icon(Icons.add),
-                  onPressed: () async {
-                    if (!mounted) return;
-                    showAddTaskDialog(context);
-                  },
-                ),
-              ),
+
               if (_isDraggingTask)
                 DragDropTarget(
                   taskProvider: taskProvider,

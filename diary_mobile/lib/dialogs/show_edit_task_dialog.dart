@@ -1,6 +1,10 @@
+import 'dart:math';
+
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 void showEditTaskDialog(
   BuildContext context,
@@ -36,28 +40,32 @@ void showEditTaskDialog(
                     task.status,
                   );
                   Future.microtask(
-                    () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Task title updated successfully!'),
+                    () => showTopSnackBar(
+                      Overlay.of(context),
+                      const CustomSnackBar.success(
+                        message: 'Task title updated Successfully',
                       ),
+                      displayDuration: Durations.short1,
                     ),
                   );
                   Navigator.pop(context);
                 } catch (e) {
                   Future.microtask(
-                    () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to update task title: $e'),
+                    () => showTopSnackBar(
+                      Overlay.of(context),
+                      CustomSnackBar.error(
+                        message: 'Failed to update task title: $e',
                       ),
+                      displayDuration: Durations.short1,
                     ),
                   );
                 }
               } else {
                 Future.microtask(
-                  () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Task title cannot be empty.'),
-                    ),
+                  () => showTopSnackBar(
+                    Overlay.of(context),
+                    CustomSnackBar.info(message: 'Task title cannot be empty.'),
+                    displayDuration: Durations.short1,
                   ),
                 );
               }

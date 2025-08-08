@@ -55,7 +55,7 @@ class TaskBoardAppBar extends StatelessWidget implements PreferredSizeWidget {
               'E-Diary',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.deepPurple,
+                color: const Color.fromARGB(255, 94, 79, 230),
               ),
             ),
       leading: isSearching
@@ -66,7 +66,13 @@ class TaskBoardAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onClearSearch();
               },
             )
-          : null,
+          : CircleAvatar(
+              radius: 18,
+              backgroundImage: NetworkImage(
+                'https://upload.wikimedia.org/wikipedia/en/4/44/PakTelecom.png',
+              ),
+              backgroundColor: Colors.transparent,
+            ),
       actions: [
         if (isSearching && searchController.text.isNotEmpty)
           IconButton(icon: const Icon(Icons.clear), onPressed: onClearSearch),

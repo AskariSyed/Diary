@@ -1,4 +1,3 @@
-// lib/screens/tabs/status_tasks_view.dart
 import 'package:diary_mobile/widgets/status_dropTarget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -217,14 +216,7 @@ class _StatusTasksViewState extends State<StatusTasksView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListTile(
-                    title: Text(
-                      task.title,
-                      style: TextStyle(
-                        decoration: task.status == TaskStatus.complete
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
+                    title: Text(task.title, style: TextStyle()),
 
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,14 +275,7 @@ class _StatusTasksViewState extends State<StatusTasksView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
-                  title: Text(
-                    task.title,
-                    style: TextStyle(
-                      decoration: task.status == TaskStatus.complete
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
+                  title: Text(task.title, style: TextStyle()),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

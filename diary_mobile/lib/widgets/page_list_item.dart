@@ -1,3 +1,4 @@
+import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/providers/page_provider.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+import 'package:diary_mobile/utils/task_helpers.dart';
 
 class PageListItem extends StatefulWidget {
   final int pageId;
@@ -81,7 +83,7 @@ class _PageListItemState extends State<PageListItem> {
       padding: const EdgeInsets.symmetric(vertical: 2),
 
       child: Card(
-        elevation: 6.0,
+        elevation: 0,
         margin: EdgeInsets.zero,
         color: Theme.of(context).cardColor,
         child: Column(
@@ -93,7 +95,7 @@ class _PageListItemState extends State<PageListItem> {
                 children: [
                   SizedBox(width: 10),
                   Text(
-                    '${widget.formatDate(widget.pageDate)}',
+                    formatDateWithDay(widget.pageDate),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -101,6 +103,15 @@ class _PageListItemState extends State<PageListItem> {
                     ),
                   ),
                   const Spacer(),
+                  IconButton(
+                    onPressed: () async {
+                      if (!mounted) return;
+                      showAddTaskDialog(context);
+                    },
+                    icon: const Icon(Icons.add_circle),
+                    tooltip: 'Add Task',
+                  ),
+
                   IconButton(
                     onPressed: () =>
                         _showDatePickerAndCopyTasks(context, pageDate),
@@ -285,8 +296,7 @@ class _PageListItemState extends State<PageListItem> {
                               showTopSnackBar(
                                 Overlay.of(context),
                                 CustomSnackBar.success(
-                                  message:
-                                      'Task "${draggedTask.title}" moved to ${status.toApiString()}!',
+                                  message: 'Status Updated!',
                                 ),
                               );
                             } catch (e) {
@@ -314,9 +324,7 @@ class _PageListItemState extends State<PageListItem> {
                               child: ExpansionTile(
                                 title: Text(
                                   '${status.toApiString().toUpperCase()} (${tasksInStatus.length})',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: TextStyle(),
                                 ),
                                 initiallyExpanded: initialStatusExpanded,
                                 children: <Widget>[

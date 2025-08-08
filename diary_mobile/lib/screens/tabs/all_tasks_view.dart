@@ -4,6 +4,8 @@ import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class AllTasksView extends StatefulWidget {
   final List<TaskDto> tasksToShow;
@@ -54,7 +56,7 @@ class _AllTasksViewState extends State<AllTasksView>
   int _currentPageIndex = 0;
 
   static const double _kPageIndicatorHeight = 60.0;
-  static const double _kVisibleIndicatorBarWidth = 150.0;
+  static const double _kVisibleIndicatorBarWidth = 240.0;
   bool _isAnimatingPageController = false;
   bool _isAnimatingIndicatorController = false;
   static const double _kSelectedIndicatorWidth = 50.0;
@@ -209,11 +211,12 @@ class _AllTasksViewState extends State<AllTasksView>
     final todaysPageId = _findTodaysPageId();
 
     if (todaysPageId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No tasks for today. Showing all pages."),
-          duration: Duration(seconds: 2),
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.error(
+          message: 'No page for Today. Create a new page',
         ),
+        displayDuration: Durations.short3,
       );
       _showPageSelectionSheet();
       return;
@@ -437,7 +440,7 @@ class _AllTasksViewState extends State<AllTasksView>
                               : _kUnselectedIndicatorWidth,
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? Theme.of(context).primaryColor
+                                ? Color.fromARGB(255, 94, 79, 230)
                                 : Colors.grey.shade400,
                             borderRadius: BorderRadius.circular(15.0),
                             border: Border.all(
