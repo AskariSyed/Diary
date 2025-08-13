@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:diary_mobile/providers/pagetDto.dart';
+import 'package:diary_mobile/providers/paget_dto.dart';
 
 class PageProvider with ChangeNotifier {
   final String _baseUrl = 'http://192.168.137.1:5158/api/Pages';
@@ -35,15 +35,21 @@ class PageProvider with ChangeNotifier {
         }).toList();
 
         if (_pages.isEmpty) {
-          print('[DEBUG] No pages received.');
+          if (kDebugMode) {
+            print('[DEBUG] No pages received.');
+          }
         }
       } else {
         _errorMessage = 'Failed to load pages: ${response.statusCode}';
-        print('[ERROR] $_errorMessage');
+        if (kDebugMode) {
+          print('[ERROR] $_errorMessage');
+        }
       }
     } catch (e) {
       _errorMessage = 'An error occurred: $e';
-      print('[EXCEPTION] $_errorMessage');
+      if (kDebugMode) {
+        print('[EXCEPTION] $_errorMessage');
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -74,7 +80,9 @@ class PageProvider with ChangeNotifier {
       return;
     }
     for (final page in _pages) {
-      print('Page ID: ${page.pageId}, Date: ${page.pageDate}');
+      if (kDebugMode) {
+        print('Page ID: ${page.pageId}, Date: ${page.pageDate}');
+      }
     }
   }
 }

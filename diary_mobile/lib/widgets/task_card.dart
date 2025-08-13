@@ -5,20 +5,24 @@ import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:diary_mobile/utils/task_helpers.dart';
 import 'package:flutter/material.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 Widget buildTaskCard(
   TaskDto task,
   TaskProvider taskProvider,
   bool isDraggableAndEditable,
-  BuildContext context,
-) {
+  BuildContext context, {
+  VoidCallback? onDragStarted,
+  VoidCallback? onDragCompleted,
+}) {
   Widget cardContent = Card(
     margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
     child: ListTile(
       title: Text(task.title),
       subtitle: Text(
         task.parentTaskCreatedAt != null
-            ? '${formatDate(task.parentTaskCreatedAt!).toString().split('.').first}'
+            ? formatDate(task.parentTaskCreatedAt!).toString().split('.').first
             : 'Created At: Unknown',
         style: const TextStyle(color: Colors.grey),
       ),
@@ -47,6 +51,15 @@ Widget buildTaskCard(
   );
   return LongPressDraggable<TaskDto>(
     data: task,
+    onDragStarted: () {
+      onDragStarted?.call();
+    },
+    onDraggableCanceled: (velocity, offset) {
+      onDragCompleted?.call();
+    },
+    onDragEnd: (details) {
+      onDragCompleted?.call();
+    },
     feedback: Material(
       elevation: 8.0,
       shadowColor: Colors.black.withOpacity(0.6),
@@ -80,7 +93,7 @@ void _confirmDeleteTask(
 ) {
   showDialog(
     context: context,
-    builder: (context) {
+    builder: (dialogContext) {
       return AlertDialog(
         title: const Text('Delete Task'),
         content: Text(
@@ -88,7 +101,7 @@ void _confirmDeleteTask(
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -99,17 +112,25 @@ void _confirmDeleteTask(
                   task.title,
                   TaskStatus.deleted,
                 );
-                Future.microtask(
-                  () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Task deleted successfully!')),
+
+                if (!dialogContext.mounted) return;
+
+                showTopSnackBar(
+                  Overlay.of(dialogContext),
+                  const CustomSnackBar.error(
+                    message: 'Task deleted successfully!',
                   ),
+                  displayDuration: Durations.short1,
                 );
-                Navigator.pop(context);
+
+                Navigator.pop(dialogContext);
               } catch (e) {
-                Future.microtask(
-                  () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete task: $e')),
-                  ),
+                if (!dialogContext.mounted) return;
+
+                showTopSnackBar(
+                  Overlay.of(dialogContext),
+                  const CustomSnackBar.error(message: 'Failed to delete task'),
+                  displayDuration: Durations.short1,
                 );
               }
             },

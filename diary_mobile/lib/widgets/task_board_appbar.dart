@@ -55,7 +55,7 @@ class TaskBoardAppBar extends StatelessWidget implements PreferredSizeWidget {
               'E-Diary',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 94, 79, 230),
+                color: Color.fromARGB(255, 94, 79, 230),
               ),
             ),
       leading: isSearching
@@ -91,6 +91,7 @@ class TaskBoardAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           onPressed: () async {
             await onRefresh();
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text("Tasks Refreshed."),

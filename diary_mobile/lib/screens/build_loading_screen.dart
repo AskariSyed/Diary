@@ -51,8 +51,6 @@ Widget buildLoadingScreen(
     floatingActionButton: Builder(
       builder: (innerContext) => FloatingActionButton.extended(
         onPressed: () async {
-          final int targetPageId = await taskProvider
-              .getTargetPageIdForNewTask();
           if (!innerContext.mounted) return;
           showAddTaskDialog(innerContext);
         },

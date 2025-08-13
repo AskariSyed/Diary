@@ -48,6 +48,7 @@ extension TaskStatusExtension on TaskStatus {
         return TaskStatus.deleted;
 
       default:
+        // ignore: avoid_print
         print(
           'Warning: Unknown TaskStatus string received from API: $statusString. Defaulting to backlog.',
         );

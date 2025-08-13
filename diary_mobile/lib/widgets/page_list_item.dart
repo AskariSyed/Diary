@@ -1,3 +1,5 @@
+// page_list_item.dart
+
 import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
@@ -23,6 +25,8 @@ class PageListItem extends StatefulWidget {
   final TaskStatus? statusToExpand;
   final int? pageToScrollTo;
   final DateTime? pageDate;
+  final VoidCallback onDragStarted;
+  final VoidCallback onDragCompleted;
 
   const PageListItem({
     super.key,
@@ -37,6 +41,8 @@ class PageListItem extends StatefulWidget {
     this.statusToExpand,
     this.pageToScrollTo,
     required this.pageDate,
+    required this.onDragCompleted,
+    required this.onDragStarted,
   });
 
   @override
@@ -61,6 +67,110 @@ class _PageListItemState extends State<PageListItem> {
   void loadPagesAndPrint(PageProvider provider) async {
     await provider.fetchPagesByDiary(1);
     provider.printAllPageIdsWithDates();
+  }
+
+  Widget _buildScrollablePageContent(
+    bool isTodayOrFuture,
+    TaskProvider taskProvider,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          controller: _scrollController,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: TaskStatus.values
+                .where((status) => status != TaskStatus.deleted)
+                .map((status) {
+                  final tasksInStatus = widget.currentPageTasks
+                      .where(
+                        (task) =>
+                            task.status == status &&
+                            task.status != TaskStatus.deleted,
+                      )
+                      .toList();
+
+                  tasksInStatus.sort((a, b) {
+                    if (a.parentTaskCreatedAt == null &&
+                        b.parentTaskCreatedAt == null) {
+                      return 0;
+                    }
+                    if (a.parentTaskCreatedAt == null) {
+                      return 1;
+                    }
+                    if (b.parentTaskCreatedAt == null) {
+                      return -1;
+                    }
+                    return b.parentTaskCreatedAt!.compareTo(
+                      a.parentTaskCreatedAt!,
+                    );
+                  });
+
+                  final String statusExpansionTileKey =
+                      'status_${widget.pageId}_${status.index}';
+                  final bool initialStatusExpanded =
+                      (widget.statusExpandedState[statusExpansionTileKey] ??
+                          false) ||
+                      (widget.pageToScrollTo == widget.pageId &&
+                          widget.statusToExpand == status);
+
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    color: widget.getStatusColor(
+                      status,
+                      widget.currentBrightness,
+                    ),
+                    elevation: 2.0,
+                    child: Column(
+                      children: [
+                        ExpansionTile(
+                          title: Text(
+                            '${status.toApiString().toUpperCase()} (${tasksInStatus.length})',
+                            style: TextStyle(),
+                          ),
+                          initiallyExpanded: initialStatusExpanded,
+                          children: <Widget>[
+                            if (tasksInStatus.isNotEmpty)
+                              Column(
+                                children: tasksInStatus.map((task) {
+                                  return buildTaskCard(
+                                    task,
+                                    taskProvider,
+                                    true,
+                                    context,
+                                    onDragStarted: widget.onDragStarted,
+                                    onDragCompleted: widget.onDragCompleted,
+                                  );
+                                }).toList(),
+                              ),
+                            if (tasksInStatus.isEmpty)
+                              SizedBox(
+                                height: 50,
+                                child: Center(
+                                  child: Text(
+                                    'No tasks here',
+                                    style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      color:
+                                          widget.currentBrightness ==
+                                              Brightness.dark
+                                          ? Colors.white70
+                                          : Colors.black54,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                })
+                .toList(),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -106,7 +216,7 @@ class _PageListItemState extends State<PageListItem> {
                   IconButton(
                     onPressed: () async {
                       if (!mounted) return;
-                      showAddTaskDialog(context);
+                      showAddTaskDialog(context, initialDate: widget.pageDate);
                     },
                     icon: const Icon(Icons.add_circle),
                     tooltip: 'Add Task',
@@ -153,6 +263,20 @@ class _PageListItemState extends State<PageListItem> {
     }
 
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final pageProvider = Provider.of<PageProvider>(context, listen: false);
+
+    // Ensure target page exists in PageProvider
+    final targetPageExists = pageProvider.pages.any(
+      (p) => DateUtils.isSameDay(p.pageDate, targetPageDate),
+    );
+    if (!targetPageExists) {
+      if (!mounted) return;
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.error(message: 'Target page does not exist.'),
+      );
+      return;
+    }
 
     DateTime? selectedSourceDate = await showDatePicker(
       context: context,
@@ -162,10 +286,23 @@ class _PageListItemState extends State<PageListItem> {
       helpText: 'Select date to copy tasks from',
       fieldLabelText: 'Source Date',
     );
+    if (!mounted) return;
     if (selectedSourceDate == null) return;
 
     selectedSourceDate = DateUtils.dateOnly(selectedSourceDate);
     final DateTime cleanTargetDate = DateUtils.dateOnly(targetPageDate);
+
+    // Ensure source page exists
+    final sourcePageExists = pageProvider.pages.any(
+      (p) => DateUtils.isSameDay(p.pageDate, selectedSourceDate!),
+    );
+    if (!sourcePageExists) {
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.error(message: 'Source page does not exist.'),
+      );
+      return;
+    }
 
     if (selectedSourceDate.isAtSameMomentAs(cleanTargetDate)) {
       if (!mounted) return;
@@ -223,152 +360,5 @@ class _PageListItemState extends State<PageListItem> {
         CustomSnackBar.error(message: 'Failed to copy tasks: ${e.toString()}'),
       );
     }
-  }
-
-  Widget _buildScrollablePageContent(
-    bool isTodayOrFuture,
-    TaskProvider taskProvider,
-  ) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          controller: _scrollController,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: TaskStatus.values
-                .where((status) => status != TaskStatus.deleted)
-                .map((status) {
-                  final tasksInStatus = widget.currentPageTasks
-                      .where(
-                        (task) =>
-                            task.status == status &&
-                            task.status != TaskStatus.deleted,
-                      )
-                      .toList();
-
-                  tasksInStatus.sort((a, b) {
-                    if (a.parentTaskCreatedAt == null &&
-                        b.parentTaskCreatedAt == null) {
-                      return 0;
-                    }
-                    if (a.parentTaskCreatedAt == null) {
-                      return 1;
-                    }
-                    if (b.parentTaskCreatedAt == null) {
-                      return -1;
-                    }
-                    return b.parentTaskCreatedAt!.compareTo(
-                      a.parentTaskCreatedAt!,
-                    );
-                  });
-
-                  final String statusExpansionTileKey =
-                      'status_${widget.pageId}_${status.index}';
-                  final bool initialStatusExpanded =
-                      (widget.statusExpandedState[statusExpansionTileKey] ??
-                          false) ||
-                      (widget.pageToScrollTo == widget.pageId &&
-                          widget.statusToExpand == status);
-
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    color: widget.getStatusColor(
-                      status,
-                      widget.currentBrightness,
-                    ),
-                    elevation: 2.0,
-                    child: Column(
-                      children: [
-                        DragTarget<TaskDto>(
-                          onWillAcceptWithDetails: (data) {
-                            return data.data.pageId == widget.pageId &&
-                                data.data.status != status;
-                          },
-                          onAcceptWithDetails: (details) async {
-                            final draggedTask = details.data;
-                            try {
-                              await Provider.of<TaskProvider>(
-                                context,
-                                listen: false,
-                              ).updateTaskStatus(draggedTask.id, status);
-
-                              if (!mounted) return;
-                              showTopSnackBar(
-                                Overlay.of(context),
-                                CustomSnackBar.success(
-                                  message: 'Status Updated!',
-                                ),
-                              );
-                            } catch (e) {
-                              if (!mounted) return;
-                              showTopSnackBar(
-                                Overlay.of(context),
-                                CustomSnackBar.error(
-                                  message: 'Failed to update task status: $e',
-                                ),
-                              );
-                            }
-                          },
-                          builder: (context, candidateData, rejectedData) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color:
-                                    candidateData.isNotEmpty && isTodayOrFuture
-                                    ? (widget.currentBrightness ==
-                                              Brightness.dark
-                                          ? Colors.blue.withOpacity(0.4)
-                                          : Colors.blue.withOpacity(0.2))
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(4.0),
-                              ),
-                              child: ExpansionTile(
-                                title: Text(
-                                  '${status.toApiString().toUpperCase()} (${tasksInStatus.length})',
-                                  style: TextStyle(),
-                                ),
-                                initiallyExpanded: initialStatusExpanded,
-                                children: <Widget>[
-                                  if (tasksInStatus.isNotEmpty)
-                                    Column(
-                                      children: tasksInStatus.map((task) {
-                                        return buildTaskCard(
-                                          task,
-                                          taskProvider,
-                                          true,
-                                          context,
-                                        );
-                                      }).toList(),
-                                    ),
-                                  if (tasksInStatus.isEmpty)
-                                    SizedBox(
-                                      height: 50,
-                                      child: Center(
-                                        child: Text(
-                                          'Drop tasks here',
-                                          style: TextStyle(
-                                            fontStyle: FontStyle.italic,
-                                            color:
-                                                widget.currentBrightness ==
-                                                    Brightness.dark
-                                                ? Colors.white70
-                                                : Colors.black54,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                })
-                .toList(),
-          ),
-        );
-      },
-    );
   }
 }

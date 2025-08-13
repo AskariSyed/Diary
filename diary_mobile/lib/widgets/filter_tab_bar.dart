@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
-import 'package:diary_mobile/widgets/status_dropTarget.dart';
+import 'package:diary_mobile/widgets/status_drop_target.dart';
 
 class FilterTabBar extends StatelessWidget {
   const FilterTabBar({

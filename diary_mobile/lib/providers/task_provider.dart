@@ -1,6 +1,6 @@
 // task_provider.dart
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '/models/task_dto.dart';
@@ -67,14 +67,18 @@ class TaskProvider with ChangeNotifier {
           }
           return a.id.compareTo(b.id);
         });
-        print('Task Fetched Successfully');
+        if (kDebugMode) {
+          print('Task Fetched Successfully');
+        }
       } else {
         _setErrorMessage(
           'Failed to load tasks: Server responded with status ${response.statusCode}. Body: ${response.body}',
         );
       }
     } catch (e) {
-      print('Error fetching tasks: $e');
+      if (kDebugMode) {
+        print('Error fetching tasks: $e');
+      }
       String userMessage =
           'Network error: Could not connect to the backend server.';
       if (e is http.ClientException &&
@@ -128,7 +132,9 @@ class TaskProvider with ChangeNotifier {
         );
       }
     } catch (e) {
-      print('Error adding task: $e');
+      if (kDebugMode) {
+        print('Error adding task: $e');
+      }
       _setErrorMessage(
         'Failed to add task due to network error or server issue. Please try again.',
       );
@@ -158,7 +164,9 @@ class TaskProvider with ChangeNotifier {
         );
       }
     } catch (e) {
-      print('Error updating task status: $e');
+      if (kDebugMode) {
+        print('Error updating task status: $e');
+      }
       _setErrorMessage(
         'Failed to update task status due to network error or server issue.',
       );
@@ -188,7 +196,9 @@ class TaskProvider with ChangeNotifier {
         );
       }
     } catch (e) {
-      print('Error updating task title: $e');
+      if (kDebugMode) {
+        print('Error updating task title: $e');
+      }
       _setErrorMessage(
         'Failed to update task title due to network error or server issue.',
       );
@@ -218,7 +228,9 @@ class TaskProvider with ChangeNotifier {
       try {
         await Future.wait(updateOperations);
       } catch (e) {
-        print('Error in combined updateTask: $e');
+        if (kDebugMode) {
+          print('Error in combined updateTask: $e');
+        }
       }
     }
   }
@@ -241,7 +253,9 @@ class TaskProvider with ChangeNotifier {
         );
       }
     } catch (e) {
-      print('Error deleting task: $e');
+      if (kDebugMode) {
+        print('Error deleting task: $e');
+      }
       _setErrorMessage(
         'Failed to delete task due to network error or server issue.',
       );
@@ -288,7 +302,9 @@ class TaskProvider with ChangeNotifier {
         return -1;
       }
     } catch (e) {
-      print('Error creating new page: $e');
+      if (kDebugMode) {
+        print('Error creating new page: $e');
+      }
       _setErrorMessage(
         'Failed to create new page due to network error or server issue. Check if backend is running.',
       );
@@ -320,7 +336,6 @@ class TaskProvider with ChangeNotifier {
       final response = await http.get(
         Uri.parse('$_tasksBaseUrl/task-history/by-parent/$parentTaskId'),
       );
-
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
         return jsonList.map((json) => TaskHistoryDto.fromJson(json)).toList();
@@ -330,7 +345,9 @@ class TaskProvider with ChangeNotifier {
         );
       }
     } catch (e) {
-      print('Error fetching task history by parentId: $e');
+      if (kDebugMode) {
+        print('Error fetching task history by parentId: $e');
+      }
       rethrow;
     }
   }
@@ -352,7 +369,9 @@ class TaskProvider with ChangeNotifier {
         );
       }
     } catch (e) {
-      print('Error fetching task history by pageTaskId: $e');
+      if (kDebugMode) {
+        print('Error fetching task history by pageTaskId: $e');
+      }
       rethrow;
     }
   }
@@ -363,29 +382,43 @@ class TaskProvider with ChangeNotifier {
       '$_pagesBaseUrl/by-date?diaryId=$diaryId&date=$formattedDate',
     );
 
-    print('Requesting page by date with URL: $url');
+    if (kDebugMode) {
+      print('Requesting page by date with URL: $url');
+    }
 
     try {
       final response = await http.get(url);
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      if (kDebugMode) {
+        print('Response status: ${response.statusCode}');
+      }
+      if (kDebugMode) {
+        print('Response body: ${response.body}');
+      }
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
-        print('Parsed pageId from response: ${jsonData['pageId']}');
+        if (kDebugMode) {
+          print('Parsed pageId from response: ${jsonData['pageId']}');
+        }
         return jsonData['pageId'] as int;
       } else if (response.statusCode == 404) {
-        print('No page found for Diary ID $diaryId on $formattedDate.');
+        if (kDebugMode) {
+          print('No page found for Diary ID $diaryId on $formattedDate.');
+        }
         return null;
       } else {
         final errorMsg = 'Failed to fetch page: Status ${response.statusCode}';
-        print(errorMsg);
+        if (kDebugMode) {
+          print(errorMsg);
+        }
         _setErrorMessage(errorMsg);
         return null;
       }
     } catch (e) {
-      print('Error fetching page by date: $e');
+      if (kDebugMode) {
+        print('Error fetching page by date: $e');
+      }
       _setErrorMessage('Network error while fetching page for $formattedDate');
       return null;
     }
@@ -409,7 +442,9 @@ class TaskProvider with ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 204) {
         await fetchTasks();
         if (response.body.isNotEmpty) {
-          print(response.body.toString());
+          if (kDebugMode) {
+            print(response.body.toString());
+          }
           return json.decode(response.body) as Map<String, dynamic>;
         } else {
           return {'Message': 'Task status updated with no response body.'};
@@ -421,7 +456,9 @@ class TaskProvider with ChangeNotifier {
         return {'Message': 'Failed to update task status: ${response.body}'};
       }
     } catch (e) {
-      print('Error updating task status for today: $e');
+      if (kDebugMode) {
+        print('Error updating task status for today: $e');
+      }
       _setErrorMessage(
         'Failed to update task status for today due to network error or server issue.',
       );
@@ -447,15 +484,7 @@ class TaskProvider with ChangeNotifier {
         'sourcePageDate': sourceDate.toIso8601String(),
         'targetPageDate': targetDate.toIso8601String(),
       });
-
-      print('Sending copy tasks request to: $url with body: $body');
-
       final response = await http.post(url, headers: headers, body: body);
-
-      print(
-        'Received copy tasks response: ${response.statusCode} - ${response.body}',
-      );
-
       if (response.statusCode == 404) {
         throw Exception(
           'Source page not found for the selected date. No tasks to copy.',
@@ -477,17 +506,18 @@ class TaskProvider with ChangeNotifier {
       } on FormatException {
         successMessage = response.body;
       } catch (e) {
-        print(
-          'Warning: Could not parse response body as JSON. Using raw body. Error: $e',
-        );
         successMessage = response.body;
       }
 
-      print('Copy tasks successful: $successMessage');
+      if (kDebugMode) {
+        print('Copy tasks successful: $successMessage');
+      }
 
       await fetchTasks();
     } catch (e) {
-      print('Error copying tasks: $e');
+      if (kDebugMode) {
+        print('Error copying tasks: $e');
+      }
       _setErrorMessage('Failed to copy tasks: ${e.toString()}');
       rethrow;
     } finally {

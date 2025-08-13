@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +15,7 @@ void showEditTaskDialog(
 
   showDialog(
     context: context,
-    builder: (context) {
+    builder: (dialogContext) {
       return AlertDialog(
         title: const Text('Edit Task Title'),
         content: TextField(
@@ -27,7 +25,7 @@ void showEditTaskDialog(
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -39,34 +37,38 @@ void showEditTaskDialog(
                     taskTitleController.text,
                     task.status,
                   );
-                  Future.microtask(
-                    () => showTopSnackBar(
-                      Overlay.of(context),
-                      const CustomSnackBar.success(
-                        message: 'Task title updated Successfully',
-                      ),
-                      displayDuration: Durations.short1,
+
+                  if (!dialogContext.mounted) return;
+
+                  showTopSnackBar(
+                    Overlay.of(dialogContext),
+                    const CustomSnackBar.success(
+                      message: 'Task title updated successfully',
                     ),
+                    displayDuration: Durations.short1,
                   );
-                  Navigator.pop(context);
+
+                  Navigator.pop(dialogContext);
                 } catch (e) {
-                  Future.microtask(
-                    () => showTopSnackBar(
-                      Overlay.of(context),
-                      CustomSnackBar.error(
-                        message: 'Failed to update task title: $e',
-                      ),
-                      displayDuration: Durations.short1,
+                  if (!dialogContext.mounted) return;
+
+                  showTopSnackBar(
+                    Overlay.of(dialogContext),
+                    CustomSnackBar.error(
+                      message: 'Failed to update task title: $e',
                     ),
+                    displayDuration: Durations.short1,
                   );
                 }
               } else {
-                Future.microtask(
-                  () => showTopSnackBar(
-                    Overlay.of(context),
-                    CustomSnackBar.info(message: 'Task title cannot be empty.'),
-                    displayDuration: Durations.short1,
+                if (!dialogContext.mounted) return;
+
+                showTopSnackBar(
+                  Overlay.of(dialogContext),
+                  const CustomSnackBar.info(
+                    message: 'Task title cannot be empty.',
                   ),
+                  displayDuration: Durations.short1,
                 );
               }
             },

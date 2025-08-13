@@ -1,4 +1,4 @@
-import 'package:diary_mobile/widgets/status_dropTarget.dart';
+import 'package:diary_mobile/widgets/status_drop_target.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';

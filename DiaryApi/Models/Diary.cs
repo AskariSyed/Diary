@@ -9,8 +9,6 @@ namespace DiaryApi.Models
         public int Id { get; set; }
         public DateTime CreatedDate { get; set; }
         public string OwnerName { get; set; }
-
-        // Navigation property for related pages
         public ICollection<Page> Pages { get; set; } = new List<Page>();
     }
 }

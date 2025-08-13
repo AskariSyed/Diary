@@ -1,4 +1,4 @@
-import 'package:diary_mobile/widgets/status_dropTarget.dart';
+import 'package:diary_mobile/widgets/status_drop_target.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:diary_mobile/models/task_dto.dart';
@@ -67,11 +67,11 @@ class _StatusTasksViewState extends State<StatusTasksView> {
     TaskProvider taskProvider,
     TaskDto task,
   ) {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final overlay = Overlay.of(context);
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return AlertDialog(
           title: const Text('Delete Task'),
           content: Text(
@@ -79,29 +79,29 @@ class _StatusTasksViewState extends State<StatusTasksView> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
+                Navigator.pop(ctx);
                 try {
                   await taskProvider.updateTask(
                     task.id,
                     task.title,
                     TaskStatus.deleted,
                   );
-                  Navigator.pop(context);
+
                   showTopSnackBar(
-                    Overlay.of(context),
+                    overlay,
                     CustomSnackBar.success(
                       message: "Task Deleted Successfully",
                     ),
                   );
                 } catch (e) {
-                  Navigator.pop(context);
                   showTopSnackBar(
-                    Overlay.of(context),
-                    CustomSnackBar.error(message: "Failed to update Task"),
+                    overlay,
+                    CustomSnackBar.error(message: "Failed to delete task: $e"),
                   );
                 }
               },

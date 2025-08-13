@@ -10,13 +10,14 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 void showAddPageDialog(BuildContext context, TaskProvider taskProvider) {
-  // Removed scrollToPageId parameter
   DateTime? selectedPageDate = DateTime.now();
   bool hasError = false;
 
   showDialog(
     context: context,
-    builder: (context) {
+    builder: (dialogContext) {
+      final overlay = Overlay.of(dialogContext);
+
       return StatefulBuilder(
         builder: (context, setStateSB) {
           return AlertDialog(
@@ -49,7 +50,8 @@ void showAddPageDialog(BuildContext context, TaskProvider taskProvider) {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'A new page will be created by the server for the selected date. Non-completed tasks from the most recent page before this date will be carried over.',
+                    'A new page will be created by the server for the selected date. '
+                    'Non-completed tasks from the most recent page before this date will be carried over.',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -57,31 +59,26 @@ void showAddPageDialog(BuildContext context, TaskProvider taskProvider) {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
                 onPressed: () async {
                   if (selectedPageDate == null) {
-                    setStateSB(() {
-                      hasError = true;
-                    });
+                    setStateSB(() => hasError = true);
                     HapticFeedback.vibrate();
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      setStateSB(() {
-                        hasError = false;
-                      });
-                    });
+                    Future.delayed(
+                      const Duration(milliseconds: 500),
+                      () => setStateSB(() => hasError = false),
+                    );
 
-                    Future.microtask(() {
-                      showTopSnackBar(
-                        Overlay.of(context),
-                        const CustomSnackBar.info(
-                          message: 'Please Select A Date',
-                        ),
-                        displayDuration: Durations.short1,
-                      );
-                    });
+                    showTopSnackBar(
+                      overlay,
+                      const CustomSnackBar.info(
+                        message: 'Please select a date',
+                      ),
+                      displayDuration: Durations.short1,
+                    );
                     return;
                   }
 
@@ -94,67 +91,56 @@ void showAddPageDialog(BuildContext context, TaskProvider taskProvider) {
                     );
 
                     if (newPageId != -1) {
-                      Navigator.pop(context);
-                      Future.microtask(() {
-                        showTopSnackBar(
-                          Overlay.of(context),
-                          const CustomSnackBar.success(
-                            message:
-                                'New page created and tasks migrated from previous page',
-                          ),
-                          displayDuration: Durations.short3,
-                        );
-                        Provider.of<TaskProvider>(
-                          context,
-                          listen: false,
-                        ).fetchTasks();
-                        Provider.of<PageProvider>(
-                          context,
-                          listen: false,
-                        ).fetchPagesByDiary(1);
-                      });
+                      Navigator.pop(dialogContext);
+
+                      showTopSnackBar(
+                        overlay,
+                        const CustomSnackBar.success(
+                          message:
+                              'New page created and tasks migrated from previous page',
+                        ),
+                        displayDuration: Durations.short3,
+                      );
+
+                      taskProvider.fetchTasks();
+
+                      Provider.of<PageProvider>(
+                        dialogContext,
+                        listen: false,
+                      ).fetchPagesByDiary(1);
                     } else {
                       taskProvider.clearErrorMessage();
-                      setStateSB(() {
-                        hasError = true;
-                      });
+                      setStateSB(() => hasError = true);
                       HapticFeedback.vibrate();
-                      Future.delayed(const Duration(milliseconds: 500), () {
-                        setStateSB(() {
-                          hasError = false;
-                        });
-                      });
+                      Future.delayed(
+                        const Duration(milliseconds: 500),
+                        () => setStateSB(() => hasError = false),
+                      );
 
-                      Future.microtask(() {
-                        showTopSnackBar(
-                          Overlay.of(context),
-                          const CustomSnackBar.error(
-                            message: 'Page Already Created',
-                          ),
-                          displayDuration: Durations.short1,
-                        );
-                      });
+                      showTopSnackBar(
+                        overlay,
+                        const CustomSnackBar.error(
+                          message: 'Page already created',
+                        ),
+                        displayDuration: Durations.short1,
+                      );
                     }
                   } catch (e) {
-                    setStateSB(() {
-                      hasError = true;
-                    });
+                    setStateSB(() => hasError = true);
                     HapticFeedback.vibrate();
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      setStateSB(() {
-                        hasError = false;
-                      });
-                    });
+                    Future.delayed(
+                      const Duration(milliseconds: 500),
+                      () => setStateSB(() => hasError = false),
+                    );
 
-                    Future.microtask(() {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
+                    showTopSnackBar(
+                      overlay,
+                      CustomSnackBar.error(
+                        message:
                             'Error creating page: ${e.toString().replaceAll("Exception: ", "")}',
-                          ),
-                        ),
-                      );
-                    });
+                      ),
+                      displayDuration: Durations.short2,
+                    );
                   }
                 },
                 child: const Text('Create Page'),

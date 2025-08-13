@@ -6,15 +6,13 @@ import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
-void showAddTaskDialog(BuildContext context) {
+void showAddTaskDialog(BuildContext context, {DateTime? initialDate}) {
   final TextEditingController taskTitleController = TextEditingController();
-  DateTime selectedDate = DateTime.now();
-
+  DateTime selectedDate = initialDate ?? DateTime.now();
   showDialog(
     context: context,
     builder: (dialogContext) {
       final navigator = Navigator.of(dialogContext);
-      final scaffoldMessenger = ScaffoldMessenger.of(dialogContext);
 
       return StatefulBuilder(
         builder: (context, setState) {
@@ -83,22 +81,15 @@ void showAddTaskDialog(BuildContext context) {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (taskTitleController.text.trim().isEmpty) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Task title cannot be empty.'),
-                      ),
-                    );
-                    return;
-                  }
+                  final overlay = Overlay.of(dialogContext);
 
-                  if (taskTitleController.text.length > 255) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Task title cannot exceed 255 characters.',
-                        ),
+                  if (taskTitleController.text.trim().isEmpty) {
+                    showTopSnackBar(
+                      overlay,
+                      const CustomSnackBar.error(
+                        message: 'Task title cannot be empty.',
                       ),
+                      displayDuration: Durations.short1,
                     );
                     return;
                   }
@@ -115,10 +106,12 @@ void showAddTaskDialog(BuildContext context) {
                     );
 
                     if (pageId == null) {
-                      scaffoldMessenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('No page found for this date.'),
+                      showTopSnackBar(
+                        overlay,
+                        const CustomSnackBar.error(
+                          message: 'No page found for this date.',
                         ),
+                        displayDuration: Durations.short1,
                       );
                       return;
                     }
@@ -130,17 +123,16 @@ void showAddTaskDialog(BuildContext context) {
                     );
 
                     showTopSnackBar(
-                      Overlay.of(context),
+                      overlay,
                       const CustomSnackBar.success(
                         message: 'Task Added Successfully',
                       ),
                       displayDuration: Durations.short1,
                     );
-                    navigator.pop();
                   } catch (e) {
                     showTopSnackBar(
-                      Overlay.of(context),
-                      CustomSnackBar.error(message: "Failed to add task: $e"),
+                      overlay,
+                      CustomSnackBar.error(message: 'Failed to add task: $e'),
                       displayDuration: Durations.short1,
                     );
                   }

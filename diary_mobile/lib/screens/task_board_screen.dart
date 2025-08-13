@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
-import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/providers/page_provider.dart';
 import 'package:diary_mobile/screens/build_empty_state.dart';
 import 'package:diary_mobile/screens/build_error_state.dart';
@@ -9,7 +8,7 @@ import 'package:diary_mobile/utils/task_helpers.dart';
 import 'package:diary_mobile/widgets/animated_switcher_main_tab_filter_tab.dart';
 import 'package:diary_mobile/widgets/drag_and_drop_target_bar.dart';
 import 'package:diary_mobile/widgets/main_tab_bar.dart';
-import 'package:diary_mobile/widgets/status_dropTarget.dart';
+import 'package:diary_mobile/widgets/status_drop_target.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -19,7 +18,9 @@ import '/mixin/taskstatus.dart';
 import '/providers/task_provider.dart';
 import '/providers/theme_provider.dart';
 import 'package:diary_mobile/screens/tabs/all_tasks_view.dart'
-    hide ExpansibleController;
+    hide
+        // ignore: undefined_hidden_name
+        ExpansibleController;
 import 'package:diary_mobile/screens/tabs/status_tasks_view.dart';
 
 class TaskBoardScreen extends StatefulWidget {
@@ -227,7 +228,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
 
       setState(() {
         _fetchErrorMessage = null;
-        print('Tasks fetched successfully');
         final List<TaskDto> allTasks = Provider.of<TaskProvider>(
           context,
           listen: false,
@@ -265,6 +265,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
           initialDisplayPageId = mostRecentPage;
         }
         if (initialDisplayPageId != null) {
+          // ignore: unused_local_variable
           final List<int> currentSortedPageIds = tasksByPageTemp.keys.toList()
             ..sort((a, b) {
               final DateTime? dateA = tasksByPageTemp[a]?.first.pageDate;
@@ -280,7 +281,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         }
       });
     } catch (e) {
-      print('Error fetching tasks from _fetchTaskswithError Handling: $e');
       setState(() {
         _fetchErrorMessage = e.toString();
       });
@@ -303,14 +303,11 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     _searchController.addListener(_onSearchChanged);
 
     setState(() {
-      // All state changes are now in one place
       _isSearching = false;
       _isScrollingFromSearch = true;
       _pageToScrollTo = pageId;
       _statusToExpand = status;
       _scrollTrigger++;
-
-      // Logic from _clearSearch() is merged here
       _selectedDate = null;
       _isFiltering = false;
       _filteredTasks = [];
@@ -323,7 +320,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
     });
 
     if (_mainTabController.index != 0) {
-      print('TaskBoardScreen: Switching to All Tasks tab.');
       if (mounted) {
         _mainTabController.animateTo(
           0,
@@ -332,9 +328,8 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
         );
       }
     }
-  } // task_board_screen.dart
+  }
 
-  // ...
   void _onScrollAndExpand(int pageId, TaskStatus status) {
     // Safely schedules the code to run after the build is complete.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -345,11 +340,8 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
           _expansionTileControllers[statusKey];
 
       if (statusController != null && !statusController.isExpanded) {
-        print('TaskBoardScreen: Expanding status tile for key: $statusKey');
         statusController.expand();
       }
-
-      // Consolidate state changes into a single call
       setState(() {
         _statusExpandedState.clear();
         _statusExpandedState[statusKey] = true;
@@ -564,6 +556,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
             ),
           ),
           appBar: AppBar(
+            titleSpacing: 0,
             backgroundColor:
                 Theme.of(context).appBarTheme.backgroundColor ??
                 Theme.of(context).colorScheme.surface,
@@ -585,14 +578,22 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                       fontSize: 18,
                     ),
                   )
-                : const Text(
-                    'PTA e-Diary',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 94, 79, 230),
+                : Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: Colors.green, // Title background color
+                    ),
+                    child: const Text(
+                      'e-Diary',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, // Text color
+                      ),
                     ),
                   ),
-
             leading: _isSearching
                 ? IconButton(
                     icon: const Icon(Icons.close),
@@ -603,7 +604,41 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                       });
                     },
                   )
-                : null,
+                : GestureDetector(
+                    onTap: () {
+                      _scaffoldKey.currentState?.openDrawer();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 14,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(38),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(0.0),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          radius: 20,
+                          child: ClipOval(
+                            child: SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: Image.asset(
+                                'lib/Assets/PTA_logo.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
             actions: [
               if (_isSearching && _searchController.text.isNotEmpty)
                 IconButton(
@@ -651,39 +686,27 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 tooltip: 'Add New Page',
                 onPressed: () => showAddPageDialog(context, taskProvider),
               ),
-              // IconButton(
-              //   onPressed: themeProvider.toggleTheme,
-              //   icon: AnimatedSwitcher(
-              //     duration: Duration(milliseconds: 1200),
-              //     transitionBuilder: (child, animation) =>
-              //         RotationTransition(turns: animation, child: child),
-              //     child: Icon(
-              //       themeProvider.themeMode == ThemeMode.light
-              //           ? Icons.light_mode_rounded
-              //           : Icons.dark_mode_rounded,
-              //       key: ValueKey(themeProvider.themeMode),
-              //     ),
-              //   ),
-              // ),
             ],
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(
-                _mainTabController.index == 0
-                    ? kToolbarHeight
-                    : kToolbarHeight * 2,
-              ),
-              child: Column(
-                children: [
-                  MainTabBar(mainTabController: _mainTabController),
-                  AnimatedSwitcherMainTabFilterTab(
-                    mainTabController: _mainTabController,
-                    filterTabController: _filterTabController,
-                    currentFilterStatus: _currentFilterStatus,
-                    currentBrightness: currentBrightness,
-                  ),
-                ],
-              ),
-            ),
+            bottom: (!_isFiltering && !_isSearching)
+                ? PreferredSize(
+                    preferredSize: Size.fromHeight(
+                      _mainTabController.index == 0
+                          ? kToolbarHeight
+                          : kToolbarHeight * 2,
+                    ),
+                    child: Column(
+                      children: [
+                        MainTabBar(mainTabController: _mainTabController),
+                        AnimatedSwitcherMainTabFilterTab(
+                          mainTabController: _mainTabController,
+                          filterTabController: _filterTabController,
+                          currentFilterStatus: _currentFilterStatus,
+                          currentBrightness: currentBrightness,
+                        ),
+                      ],
+                    ),
+                  )
+                : null,
           ),
           body: Stack(
             children: [

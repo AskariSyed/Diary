@@ -26,6 +26,11 @@ namespace DiaryApi.Controllers
             {
                 return BadRequest(ModelState);
             }
+            if (createTaskDto.Title.Length >= 255)
+            {
+                return BadRequest("Task title must be less than 255 characters.");
+            }
+
 
             var pageExists = await _context.Pages.AnyAsync(p => p.PageId == createTaskDto.PageId);
             if (!pageExists)

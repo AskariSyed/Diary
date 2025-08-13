@@ -1,22 +1,30 @@
+// page_view_builder.dart
+
 import 'dart:math' as m;
 
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
 import 'package:diary_mobile/screens/tabs/all_tasks_view.dart';
+// Corrected import
 import 'package:diary_mobile/widgets/page_list_item.dart';
 import 'package:flutter/material.dart';
 
 class PageViewBuilder extends StatelessWidget {
+  final PageController _pageController;
+  final AllTasksView widget;
+  final ValueChanged<int> onPageChanged;
+  final VoidCallback onDragStarted; // Add this callback
+  final VoidCallback onDragCompleted; // Add this callback
+
   const PageViewBuilder({
     super.key,
     required PageController pageController,
     required this.widget,
     required this.onPageChanged,
+    required this.onDragStarted,
+    required this.onDragCompleted,
   }) : _pageController = pageController;
 
-  final PageController _pageController;
-  final AllTasksView widget;
-  final ValueChanged<int> onPageChanged;
   @override
   Widget build(BuildContext context) {
     return PageView.builder(
@@ -80,6 +88,9 @@ class PageViewBuilder extends StatelessWidget {
                     statusExpandedState: widget.statusExpandedState,
                     currentBrightness: widget.currentBrightness,
                     statusToExpand: widget.statusToExpand,
+                    // Pass the callbacks down to PageListItem
+                    onDragStarted: onDragStarted,
+                    onDragCompleted: onDragCompleted,
                   ),
                 ),
               ),

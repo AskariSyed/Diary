@@ -1,3 +1,6 @@
+// all_tasks_view.dart
+
+import 'package:diary_mobile/widgets/drag_drop_target._Pages.dart';
 import 'package:diary_mobile/widgets/page_view_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:diary_mobile/models/task_dto.dart';
@@ -6,6 +9,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+
+import 'package:provider/provider.dart';
+import 'package:diary_mobile/providers/task_provider.dart';
 
 class AllTasksView extends StatefulWidget {
   final List<TaskDto> tasksToShow;
@@ -54,9 +60,23 @@ class _AllTasksViewState extends State<AllTasksView>
   late PageController _pageController;
   late ScrollController _pageIndicatorScrollController;
   int _currentPageIndex = 0;
+  bool _isDragging = false;
+
+  void _handleDragStarted() {
+    setState(() {
+      _isDragging = true;
+    });
+  }
+
+  void _handleDragCompleted() {
+    setState(() {
+      _isDragging = false;
+    });
+  }
 
   static const double _kPageIndicatorHeight = 60.0;
   static const double _kVisibleIndicatorBarWidth = 240.0;
+  // ignore: unused_field
   bool _isAnimatingPageController = false;
   bool _isAnimatingIndicatorController = false;
   static const double _kSelectedIndicatorWidth = 50.0;
@@ -318,178 +338,195 @@ class _AllTasksViewState extends State<AllTasksView>
     final int? todaysPageId = _findTodaysPageId();
     final bool isTodaySelected =
         _currentPageIndex == widget.sortedPageIds.indexOf(todaysPageId ?? -1);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: PageViewBuilder(
-              pageController: _pageController,
-              widget: widget,
-              onPageChanged: (index) {
-                if (_currentPageIndex != index) {
-                  setState(() {
-                    _currentPageIndex = index;
-                  });
-                  SchedulerBinding.instance.addPostFrameCallback((_) {
-                    _scrollToCenterIndicator(index);
-                  });
-                }
-              },
-            ),
-          ),
-          Container(
-            height: _kPageIndicatorHeight,
-            padding: const EdgeInsets.symmetric(vertical: 12.0),
-            margin: const EdgeInsets.only(bottom: 4.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: GestureDetector(
-                    onTap: _scrollToToday,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: _kHorizontalMargin,
-                      ),
-                      width: isTodaySelected
-                          ? _kUnselectedIndicatorWidth
-                          : _kTodayButtonExpandedWidth,
-                      height: isTodaySelected ? 30.0 : 36.0,
-                      decoration: BoxDecoration(
-                        color: isTodaySelected
-                            ? Colors.grey.shade600
-                            : Theme.of(context).colorScheme.secondary,
-                        borderRadius: BorderRadius.circular(15.0),
-                        border: Border.all(
-                          color: isTodaySelected
-                              ? Colors.grey.shade500
-                              : Colors.transparent,
-                          width: 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: isTodaySelected
-                            ? const Icon(
-                                Icons.calendar_today,
-                                color: Colors.white,
-                                size: 16.0,
-                              )
-                            : FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  'Today',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
+          Column(
+            children: [
+              Expanded(
+                child: PageViewBuilder(
+                  pageController: _pageController,
+                  widget: widget,
+                  onDragStarted: _handleDragStarted,
+                  onDragCompleted: _handleDragCompleted,
+                  onPageChanged: (index) {
+                    if (_currentPageIndex != index) {
+                      setState(() {
+                        _currentPageIndex = index;
+                      });
+                      SchedulerBinding.instance.addPostFrameCallback((_) {
+                        _scrollToCenterIndicator(index);
+                      });
+                    }
+                  },
                 ),
-                SizedBox(
-                  width: _kVisibleIndicatorBarWidth,
-                  child: ListView.builder(
-                    controller: _pageIndicatorScrollController,
-                    scrollDirection: Axis.horizontal,
-                    itemCount: widget.sortedPageIds.length,
-                    itemBuilder: (context, index) {
-                      bool isSelected = _currentPageIndex == index;
-                      final int pageId = widget.sortedPageIds[index];
-                      final DateTime? pageDate = widget.pageDatesById[pageId];
-
-                      return GestureDetector(
-                        onTap: () {
-                          if (_currentPageIndex != index) {
-                            _pageController
-                                .animateToPage(
-                                  index,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                )
-                                .then((_) {
-                                  if (mounted) {
-                                    setState(() {
-                                      _currentPageIndex = index;
-                                    });
-                                    SchedulerBinding.instance
-                                        .addPostFrameCallback((_) {
-                                          _scrollToCenterIndicator(index);
-                                        });
-                                  }
-                                });
-                          } else {
-                            SchedulerBinding.instance.addPostFrameCallback((_) {
-                              _scrollToCenterIndicator(index);
-                            });
-                          }
-                        },
+              ),
+              Container(
+                height: _kPageIndicatorHeight,
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                margin: const EdgeInsets.only(bottom: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: GestureDetector(
+                        onTap: _scrollToToday,
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 500),
+                          duration: const Duration(milliseconds: 300),
                           margin: const EdgeInsets.symmetric(
                             horizontal: _kHorizontalMargin,
                           ),
-                          height: isSelected ? 36.0 : 30.0,
-                          width: isSelected
-                              ? _kSelectedIndicatorWidth
-                              : _kUnselectedIndicatorWidth,
+                          width: isTodaySelected
+                              ? _kUnselectedIndicatorWidth
+                              : _kTodayButtonExpandedWidth,
+                          height: isTodaySelected ? 30.0 : 36.0,
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? Color.fromARGB(255, 94, 79, 230)
-                                : Colors.grey.shade400,
+                            color: isTodaySelected
+                                ? Colors.grey.shade600
+                                : Theme.of(context).colorScheme.secondary,
                             borderRadius: BorderRadius.circular(15.0),
                             border: Border.all(
-                              color: isSelected
-                                  ? Colors.transparent
-                                  : Colors.grey.shade300,
+                              color: isTodaySelected
+                                  ? Colors.grey.shade500
+                                  : Colors.transparent,
                               width: 1,
                             ),
                           ),
                           child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (isSelected)
-                                  Expanded(
+                            child: isTodaySelected
+                                ? const Icon(
+                                    Icons.calendar_today,
+                                    color: Colors.white,
+                                    size: 16.0,
+                                  )
+                                : FittedBox(
+                                    fit: BoxFit.scaleDown,
                                     child: Text(
-                                      pageDate != null
-                                          ? myFormatDateFunction(pageDate)
-                                          : 'N/A',
-                                      textAlign: TextAlign.center,
+                                      'Today',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 12,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                      softWrap: false,
                                     ),
                                   ),
-                                if (!isSelected)
-                                  Text(
-                                    pageDate != null
-                                        ? DateFormat('dd').format(pageDate)
-                                        : 'N/A',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                              ],
-                            ),
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: _kVisibleIndicatorBarWidth,
+                      child: ListView.builder(
+                        controller: _pageIndicatorScrollController,
+                        scrollDirection: Axis.horizontal,
+                        itemCount: widget.sortedPageIds.length,
+                        itemBuilder: (context, index) {
+                          bool isSelected = _currentPageIndex == index;
+                          final int pageId = widget.sortedPageIds[index];
+                          final DateTime? pageDate =
+                              widget.pageDatesById[pageId];
+
+                          return GestureDetector(
+                            onTap: () {
+                              if (_currentPageIndex != index) {
+                                _pageController
+                                    .animateToPage(
+                                      index,
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      curve: Curves.easeInOut,
+                                    )
+                                    .then((_) {
+                                      if (mounted) {
+                                        setState(() {
+                                          _currentPageIndex = index;
+                                        });
+                                        SchedulerBinding.instance
+                                            .addPostFrameCallback((_) {
+                                              _scrollToCenterIndicator(index);
+                                            });
+                                      }
+                                    });
+                              } else {
+                                SchedulerBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  _scrollToCenterIndicator(index);
+                                });
+                              }
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 500),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: _kHorizontalMargin,
+                              ),
+                              height: isSelected ? 36.0 : 30.0,
+                              width: isSelected
+                                  ? _kSelectedIndicatorWidth
+                                  : _kUnselectedIndicatorWidth,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Color.fromARGB(255, 94, 79, 230)
+                                    : Colors.grey.shade400,
+                                borderRadius: BorderRadius.circular(15.0),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.transparent
+                                      : Colors.grey.shade300,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (isSelected)
+                                      Expanded(
+                                        child: Text(
+                                          pageDate != null
+                                              ? myFormatDateFunction(pageDate)
+                                              : 'N/A',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: false,
+                                        ),
+                                      ),
+                                    if (!isSelected)
+                                      Text(
+                                        pageDate != null
+                                            ? DateFormat('dd').format(pageDate)
+                                            : 'N/A',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (_isDragging)
+            DragDropTargetForPage(
+              taskProvider: taskProvider,
+              currentBrightness: widget.currentBrightness,
+            ),
         ],
       ),
     );

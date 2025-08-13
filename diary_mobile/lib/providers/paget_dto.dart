@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class PageDto {
   final int pageId;
   final int diaryNo;
@@ -9,7 +11,9 @@ class PageDto {
     required this.pageDate,
   });
   factory PageDto.fromJson(Map<String, dynamic> json) {
-    print('Parsing page JSON: $json');
+    if (kDebugMode) {
+      print('Parsing page JSON: $json');
+    }
     return PageDto(
       pageId: json['pageId'],
       diaryNo: json['diaryNo'],
