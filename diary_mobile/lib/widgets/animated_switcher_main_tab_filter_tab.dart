@@ -21,7 +21,7 @@ class AnimatedSwitcherMainTabFilterTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 500),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return SlideTransition(
           position: Tween<Offset>(

@@ -127,8 +127,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Back to Sign In
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
