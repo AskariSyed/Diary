@@ -9,6 +9,7 @@ namespace DiaryApi.Models
         public int Id { get; set; }
         public DateTime CreatedDate { get; set; }
         public string OwnerName { get; set; }
+        public Note Note { get; set; }
         public ICollection<Page> Pages { get; set; } = new List<Page>();
     }
 }

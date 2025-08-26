@@ -109,6 +109,53 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "DiaryApi.Controllers.DiariesController",
+    "Method": "UpdateOrCreateNote",
+    "RelativePath": "api/Diaries/{id}/note",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "noteUpdateDto",
+        "Type": "DiaryApi.Dtos.NoteUpdateDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DiaryApi.Controllers.DiariesController",
+    "Method": "GetNoteByDiaryId",
+    "RelativePath": "api/Diaries/{id}/note",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "DiaryApi.Dtos.NoteDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "DiaryApi.Controllers.PagesController",
     "Method": "GetPageById",
     "RelativePath": "api/Pages/{id}",

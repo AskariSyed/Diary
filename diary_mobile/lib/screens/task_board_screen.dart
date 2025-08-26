@@ -1,9 +1,11 @@
 import 'dart:ui';
+import 'package:diary_mobile/dialogs/note_view_dialog.dart';
 import 'package:diary_mobile/dialogs/show_add_page_dialog.dart';
 import 'package:diary_mobile/providers/page_provider.dart';
 import 'package:diary_mobile/screens/build_empty_state.dart';
 import 'package:diary_mobile/screens/build_error_state.dart';
 import 'package:diary_mobile/screens/build_loading_screen.dart';
+import 'package:diary_mobile/screens/signin_screen.dart';
 import 'package:diary_mobile/utils/task_helpers.dart';
 import 'package:diary_mobile/widgets/animated_switcher_main_tab_filter_tab.dart';
 import 'package:diary_mobile/widgets/drag_and_drop_target_bar.dart';
@@ -512,11 +514,16 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                                 : Colors.blueGrey,
                           ),
                         ),
-                        title: const Text('Toggle Theme'),
+                        title: const Text('Dark Theme'),
                         trailing: Switch(
                           value: themeProvider.themeMode == ThemeMode.dark,
                           activeColor: const Color.fromARGB(255, 152, 105, 233),
-                          activeTrackColor: Color.fromARGB(255, 53, 45, 130),
+                          activeTrackColor: const Color.fromARGB(
+                            255,
+                            53,
+                            45,
+                            130,
+                          ),
                           inactiveThumbColor: Colors.grey,
                           inactiveTrackColor: Colors.grey[300],
                           onChanged: (bool value) async {
@@ -548,9 +555,17 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   ),
                 ),
                 const Divider(height: 1),
-                const ListTile(
-                  leading: Icon(Icons.logout),
-                  title: Text('Logout'),
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Logout'),
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -580,17 +595,28 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                   )
                 : Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
+                      horizontal: 0,
                       vertical: 14,
                     ),
                     decoration: const BoxDecoration(
-                      color: Colors.green, // Title background color
+                      color: Color.fromARGB(255, 123, 191, 223),
+                      borderRadius: BorderRadius.only(
+                        bottomRight: Radius.circular(38),
+                        topRight: Radius.circular(38),
+                      ),
                     ),
-                    child: const Text(
-                      'e-Diary',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, // Text color
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 90),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'e-Diary',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -610,24 +636,21 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 14,
+                        horizontal: 2,
+                        vertical: 8,
                       ),
                       decoration: const BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(38),
-                        ),
+                        color: Color.fromARGB(255, 123, 191, 223),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(0.0),
                         child: CircleAvatar(
-                          backgroundColor: Colors.white,
-                          radius: 20,
+                          backgroundColor: WidgetStateColor.transparent,
+                          radius: 30,
                           child: ClipOval(
                             child: SizedBox(
-                              width: 40,
-                              height: 40,
+                              width: 60,
+                              height: 60,
                               child: Image.asset(
                                 'lib/Assets/PTA_logo.png',
                                 fit: BoxFit.contain,
@@ -685,6 +708,23 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
                 icon: const Icon(Icons.note_add),
                 tooltip: 'Add New Page',
                 onPressed: () => showAddPageDialog(context, taskProvider),
+              ),
+              IconButton(
+                icon: Image.asset(
+                  'lib/Assets/notes.png',
+                  width: 24, // adjust size as needed
+                  height: 24,
+                  color: null, // set a color if you want to tint it
+                ),
+                tooltip: 'Note',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return const NoteViewDialog();
+                    },
+                  );
+                },
               ),
             ],
             bottom: (!_isFiltering && !_isSearching)

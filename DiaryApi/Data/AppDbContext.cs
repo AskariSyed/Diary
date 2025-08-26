@@ -11,6 +11,7 @@ namespace DiaryApi.Data
         public DbSet<Page> Pages { get; set; }
         public DbSet<DiaryTask> DiaryTasks { get; set; } // <-- Updated from Tasks
         public DbSet<PageTask> PageTasks { get; set; }
+        public DbSet<Note> Notes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

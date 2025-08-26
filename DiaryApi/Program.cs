@@ -4,10 +4,10 @@ using DiaryApi.Data;
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.ListenAnyIP(5158); // HTTP
+    serverOptions.ListenAnyIP(5158); 
     serverOptions.ListenAnyIP(7050, listenOptions =>
     {
-        listenOptions.UseHttps(); // HTTPS
+        listenOptions.UseHttps(); 
     });
 });
 

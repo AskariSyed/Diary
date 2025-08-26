@@ -1,5 +1,4 @@
-// page_list_item.dart
-
+import 'dart:io';
 import 'package:diary_mobile/dialogs/show_add_task_dialog.dart';
 import 'package:diary_mobile/mixin/taskstatus.dart';
 import 'package:diary_mobile/models/task_dto.dart';
@@ -8,9 +7,13 @@ import 'package:diary_mobile/providers/task_provider.dart';
 import 'package:diary_mobile/widgets/task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:diary_mobile/utils/task_helpers.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
 
 class PageListItem extends StatefulWidget {
   final int pageId;
@@ -213,6 +216,7 @@ class _PageListItemState extends State<PageListItem> {
                     ),
                   ),
                   const Spacer(),
+
                   IconButton(
                     onPressed: () async {
                       if (!mounted) return;
@@ -227,6 +231,13 @@ class _PageListItemState extends State<PageListItem> {
                         _showDatePickerAndCopyTasks(context, pageDate),
                     icon: const Icon(Icons.move_down_rounded),
                     tooltip: 'Copy tasks from another day',
+                  ),
+                  IconButton(
+                    onPressed: () async {
+                      await _sharePageAsPdf();
+                    },
+                    icon: const Icon(Icons.share),
+                    tooltip: 'Share Page Tasks',
                   ),
                 ],
               ),
@@ -360,5 +371,87 @@ class _PageListItemState extends State<PageListItem> {
         CustomSnackBar.error(message: 'Failed to copy tasks: ${e.toString()}'),
       );
     }
+  }
+
+  Future<void> _sharePageAsPdf() async {
+    if (widget.pageDate == null) {
+      if (!mounted) return;
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.error(
+          message: 'Error: Page date is not available.',
+        ),
+      );
+      return;
+    }
+
+    final pdf = pw.Document();
+    final standardFont = pw.Font.helvetica();
+    final standardBoldFont = pw.Font.helveticaBold();
+    final formattedDate = formatDateWithDay(widget.pageDate);
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'Tasks for $formattedDate',
+                style: pw.TextStyle(font: standardBoldFont, fontSize: 24),
+              ),
+              pw.SizedBox(height: 20),
+              ...TaskStatus.values
+                  .where((status) => status != TaskStatus.deleted)
+                  .map((status) {
+                    final tasksInStatus = widget.currentPageTasks
+                        .where((task) => task.status == status)
+                        .toList();
+
+                    if (tasksInStatus.isEmpty) {
+                      return pw.SizedBox.shrink();
+                    }
+                    return pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          status.toApiString().toUpperCase(),
+                          style: pw.TextStyle(
+                            font: standardBoldFont,
+                            fontSize: 18,
+                            color: PdfColors.blue,
+                          ),
+                        ),
+                        pw.SizedBox(height: 5),
+                        ...tasksInStatus.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final task = entry.value;
+                          return pw.Text(
+                            '${index + 1}. ${task.title}',
+                            style: pw.TextStyle(
+                              font: standardFont,
+                              fontSize: 14,
+                            ),
+                          );
+                        }),
+                        pw.SizedBox(height: 15),
+                      ],
+                    );
+                  }),
+            ],
+          );
+        },
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final file = File('${output.path}/diary_tasks_$formattedDate.pdf');
+    await file.writeAsBytes(await pdf.save());
+
+    if (!mounted) return;
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], text: 'My tasks for $formattedDate');
   }
 }

@@ -135,7 +135,72 @@ namespace DiaryApi.Controllers
             _context.Diaries.Remove(diaryToRemove); // Mark for removal
             await _context.SaveChangesAsync(); // Save changes to the database (performs the delete)
 
-            return NoContent(); // 204 No Content for successful deletion
+            return NoContent(); 
+        }
+    
+     [HttpPut("{id}/note")]
+        public async Task<IActionResult> UpdateOrCreateNote(int id, [FromBody] NoteUpdateDto noteUpdateDto)
+        {
+           
+            var diary = await _context.Diaries
+                .Include(d => d.Note)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
+            if (diary == null)
+            {
+                return NotFound();
+            }
+
+            if (diary.Note != null)
+            {
+               
+                diary.Note.Description = noteUpdateDto.Description;
+            }
+            else
+            {
+               
+                var newNote = new Note
+                {
+                    Description = noteUpdateDto.Description,
+                    DiaryId = diary.Id 
+                };
+
+                _context.Notes.Add(newNote); 
+                diary.Note = newNote;
+            }
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        [HttpGet("{id}/note")]
+        public async Task<ActionResult<NoteDto>> GetNoteByDiaryId(int id)
+        {
+            // Find the diary and include its associated note
+            var diary = await _context.Diaries
+                .Include(d => d.Note)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
+            // If the diary doesn't exist, return a 404 Not Found
+            if (diary == null)
+            {
+                return NotFound();
+            }
+
+            // If the diary exists but has no note, also return 404
+            // or an empty response, depending on your API design.
+            if (diary.Note == null)
+            {
+                return NotFound("No note found for this diary.");
+            }
+
+            // Map the Note entity to a NoteDto and return it
+            var noteDto = new NoteDto
+            {
+                Id = diary.Note.Id,
+                Description = diary.Note.Description
+            };
+
+            return Ok(noteDto);
         }
     }
 }

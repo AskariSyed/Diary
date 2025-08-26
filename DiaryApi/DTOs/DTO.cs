@@ -87,5 +87,16 @@ public class CopyTasksDto
         [Required(ErrorMessage = "Target page date is required.")]
         public DateTime TargetPageDate { get; set; }
     }
+
+
+    public class NoteUpdateDto
+    {
+        public string Description { get; set; }
+    }
+    public class NoteDto
+    {
+        public int Id { get; set; }
+        public string Description { get; set; }
+    }
 }
 

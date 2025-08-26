@@ -1,4 +1,5 @@
 import 'package:diary_mobile/providers/page_provider.dart';
+import 'package:diary_mobile/screens/signin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -43,7 +44,7 @@ class MyApp extends StatelessWidget {
               cardColor: Colors.grey[850],
             ),
             themeMode: themeProvider.themeMode,
-            home: const TaskBoardScreen(),
+            home: const LoginScreen(),
             debugShowCheckedModeBanner: false,
             themeAnimationCurve: Curves.easeInOut,
           );

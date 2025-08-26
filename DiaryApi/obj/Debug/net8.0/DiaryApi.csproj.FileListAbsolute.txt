@@ -266,10 +266,10 @@ C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\staticwebassets.build.j
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\staticwebassets.build.json.cache
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\DiaryApi.csproj.Up2Date
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\DiaryApi.dll
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\refint\DiaryApi.dll
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\DiaryApi.pdb
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\DiaryApi.genruntimeconfig.cache
 C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\ref\DiaryApi.dll
+C:\Users\HP\source\repos\Diary\DiaryApi\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
