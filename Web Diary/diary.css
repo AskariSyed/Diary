@@ -64,13 +64,14 @@ body {
   height: 60px;
   z-index: 1000;
   width: 100%;
+  background-color: white;
 }
 
 .custom-navbar-left {
   width: auto;
-  background-color: #4CAF50;
+  background-color: #7bbfdf;
     /* border-bottom-left-radius: 40px; */
-    border-radius: 0 0 0 40px;
+    border-radius: 0 40px 40px 0px;
   display: flex;
   align-items: center;
   padding: 0 30px 0 24px;
@@ -83,8 +84,8 @@ body {
   background-color: white;
   display: flex;
   align-items: center;
-  padding-left: 30px;
-    justify-content: flex-start; /* 👈 This will push child content to the far right */
+  padding-left: 10px;
+    justify-content: flex-start; 
 
 }
 
@@ -175,7 +176,7 @@ body {
   margin: 0 auto;
 }
 .page-navigation button,
-.add-task-btn.w-100 {
+.add-task-btn.w-100  {
   background-color: white !important;
   color: #28a745 !important; /* Green text */
   border: 2px solid #28a745 !important; /* Green border */
@@ -186,6 +187,7 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
 }
+
 .page-navigation button:hover,
 .add-task-btn.w-100:hover {
   background-color: #256025 !important;
@@ -572,18 +574,37 @@ body {
 .diary-card {
     font-family: 'Segoe UI', Arial, sans-serif;
     width: 100%;
-    max-width: 2000px; /* Adjust max-width as needed */
+    max-width: 1600px; /* Adjust max-width as needed */
     margin: 0 auto; /* Centers the diary card */
     padding: 15px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     margin-top: 20px; /* Reduced space between calendar and diary card */
-    margin-left: 10px; /* Reduced from 15px to move the card closer to the sidebar */
+    margin-left: 15px; /* Reduced from 15px to move the card closer to the sidebar */
     margin-right: 10px; /* Add space on the right side to match the left */
     position: sticky; 
     height: 600px;
   }
+@media (max-width: 900px) {
+  .diary-card {
+    margin-left: 0;
+    margin-right: 0;
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    padding: 12px;
+  }
+}
+
+/* Small screens (<= 768px) */
+@media (max-width: 768px) {
+  .diary-card {
+    padding: 8px;
+    margin-top: 10px;
+    border-radius: 4px;
+  }
+}
 
 
 #calendar-container td span.selected {

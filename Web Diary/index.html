@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Diary App</title>
-<meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>E-Diary App</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <link rel="stylesheet" href="diary.css">
 
   <style>
@@ -115,9 +117,14 @@
             <button class="add-task-btn" onclick="if(this.previousElementSibling.value.trim() === '') { alert('Please add a task first'); return; } addNewTask(this);">
               Add Task
             </button>
+             
             <button class="btn btn-outline-primary voice-btn" type="button" title="Speak Task">
               <i class="fas fa-microphone"></i>
             </button>
+           <button id="export-pdf-btn" class="add-task-btn" title="Export PDF">
+  <i class="fas fa-file-pdf"></i>
+</button>
+
             <span class="voice-status" style="display:none;"></span>
             <button class="btn btn-outline-success" id="openImportModalBtn" title="Import Tasks from Date">
               <i class="fas fa-file-import"></i>
@@ -163,26 +170,61 @@
     <!-- Left section (green) -->
     <div class="custom-navbar-left">
      <a href="#" id="ediary-logo-link" style="display: inline-flex; align-items: center; text-decoration: none; font-size: 24px; color: white;">
-        <img src="https://logodix.com/logo/2079356.jpg" alt="PTA Logo" style="height: 38px; width: 38px; border-radius: 50%; margin-right: 8px;">
+        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/44/PakTelecom.png/375px-PakTelecom.png" alt="PTA Logo" style="height: 38px; width: 45px; border-radius: 10%; margin-right: 8px;">
         e-Diary
       </a>
     </div>
   
-   
   <!-- Right section (white) -->
-  <div class="custom-navbar-right" style="display: flex; align-items: center; justify-content: flex-end; flex-grow: 1;">
-    <span id="diary-date-title" style="margin-right: auto; color: black; font-size: 1.1rem;"></span>
-    <div class="position-relative" style="margin-left: 20px;">
-      <input type="text" class="form-control search-bar" id="global-search"
-        placeholder="🔍 Search for Task here..."
-        style="font-size: 0.95rem; width:200px; height: 36px; padding: 4px 10px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+<div class="custom-navbar-right" 
+     style="display: flex; align-items: center; justify-content: flex-end; flex-grow: 1;">
+
+  <!-- Date Title -->
+  <span id="diary-date-title" 
+        style="margin-right: auto; color: black; font-size: 1.1rem;">
+  </span>
+
+  <!-- Notes Button + Search Bar -->
+  <div class="position-relative" style="margin-left: 20px; display: flex; align-items: center; gap: 10px;">
+    
+    <!-- Notes Button -->
+    <button id="notes-btn" class="add-task-btn" title="Notes">
+  <i class="fas fa-sticky-note"></i>
+</button>
+
+    <!-- Search Bar -->
+    <div class="position-relative">
+      <input type="text" 
+             class="form-control search-bar" 
+             id="global-search"
+             placeholder="🔍 Search for Task here..."
+             style="font-size: 0.95rem; width: 200px; height: 36px; 
+                    padding: 4px 10px; border-radius: 6px; 
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+
+      <!-- Search Results Dropdown -->
       <div id="search-results"
-        class=""
-        style="position: absolute; top: 100%; right: 0; z-index: 999; max-height: 300px; overflow-y: auto; width: 200px;">
+           style="position: absolute; top: 100%; right: 0; z-index: 999; 
+                  max-height: 300px; overflow-y: auto; width: 200px; 
+                  background: white; border: 1px solid #ddd; border-radius: 6px; 
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none;">
       </div>
     </div>
   </div>
+</div>
+<div id="notes-modal" 
+     style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+            background:white; padding:20px; border-radius:8px; width:300px; 
+            box-shadow:0 4px 10px rgba(0,0,0,0.2); z-index:1000;">
+  <h3>📝 Diary Note</h3>
+  <textarea id="note-content" 
+            style="width:100%; height:120px; margin-top:10px; padding:8px; border-radius:6px; border:1px solid #ccc;"></textarea>
+  <div style="margin-top:12px; text-align:right;">
+    <button id="save-note" style="background:#28a745; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">💾 Save</button>
+    <button id="close-note" style="background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">✖ Close</button>
   </div>
+</div>
+
   <!-- ✅ Calendar Section -->
   <div class="sidebar">
     <div class="calendar-bar mb-3">
@@ -674,6 +716,21 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (nextBtn) nextBtn.addEventListener("click", goToNextPage);
   if (prevBtn) prevBtn.addEventListener("click", goToPreviousPage);
 
+  const todayStr = formatDateAsYMD(new Date());
+  const pages = await getAllDiaryPages();
+  const dates = [...new Set(pages.map(p => normalizeDateISO(p.pageDate)))].filter(Boolean).sort((a, b) => new Date(b) - new Date(a));
+  const todayExists = dates.includes(todayStr);
+
+  if (todayExists) {
+    currentSelectedDate = todayStr;
+    updateNavbarDate(todayStr);
+    await loadTasksForDate(todayStr);
+  } else if (dates.length > 0) {
+    currentSelectedDate = dates[0];
+    updateNavbarDate(dates[0]);
+    await loadTasksForDate(dates[0]);
+  }
+
   // calendar click -> check/create/open page
   document.addEventListener("click", async function (e) {
     const pages = await getAllDiaryPages();
@@ -1124,6 +1181,122 @@ async function viewTaskHistory(parentTaskId) {
     alert("Unable to load task history.");
   }
 }
+const modal = document.getElementById("notes-modal");
+const textarea = document.getElementById("note-content");
+
+// Open Modal + Load Note
+document.getElementById("notes-btn").addEventListener("click", async () => {
+    const diaryId = 1; // fixed for now
+    try {
+        let response = await fetch(`http://192.168.137.1:5158/api/diaries/${diaryId}/note`);
+        if (response.ok) {
+            let note = await response.json();
+            textarea.value = note.description;
+        } else {
+            textarea.value = ""; // No note found
+        }
+        modal.style.display = "block";
+    } catch (err) {
+        console.error("Error fetching note:", err);
+        alert("Failed to load note.");
+    }
+});
+
+// Save Note (PUT) + Close Popup
+document.getElementById("save-note").addEventListener("click", async () => {
+    const diaryId = 1;
+    try {
+        let response = await fetch(`http://192.168.137.1:5158/api/diaries/${diaryId}/note`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ description: textarea.value })
+        });
+
+        if (response.ok) {
+            alert("Note saved successfully!");
+            modal.style.display = "none"; // ✅ close popup after save
+        } else {
+            alert("Error saving note.");
+        }
+    } catch (err) {
+        console.error("Error saving note:", err);
+    }
+});
+
+// Close Modal (manual)
+document.getElementById("close-note").addEventListener("click", () => {
+    modal.style.display = "none";
+});
+document.getElementById("export-pdf-btn").addEventListener("click", () => {
+  const { jsPDF } = window.jspdf;
+
+  // ✅ Grab current diary date for title
+  const dateTitle = document.getElementById("diary-date-title")?.textContent.trim() || "Diary Page";
+
+  // ✅ Define statuses and their container IDs
+  const statusMap = {
+    "TO-DO": "todo-column",
+    "IN PROGRESS": "inprogress-column",
+    "TO DISCUSS": "todiscuss-column",
+    "FOLLOW-UP": "followup-column",
+    "ON HOLD": "onhold-column",
+    "COMPLETED": "completed-column"
+  };
+
+  // ✅ Collect tasks grouped by status
+  let tasksByStatus = {};
+  Object.entries(statusMap).forEach(([status, colId]) => {
+    const col = document.getElementById(colId);
+    const tasks = col ? [...col.querySelectorAll(".task-title")].map(el => el.textContent.trim()) : [];
+    tasksByStatus[status] = tasks;
+  });
+
+  // ✅ Build PDF
+  const doc = new jsPDF();
+  let y = 20;
+
+  // Title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0); // black for title
+  doc.text(`Tasks for ${dateTitle}`, 14, y);
+  y += 10;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
+
+  Object.entries(tasksByStatus).forEach(([status, tasks]) => {
+    // 🔵 Blue headings
+    doc.setTextColor(0, 102, 204);
+    doc.setFont("helvetica", "bold");
+    doc.text(status, 14, y);
+    y += 8;
+
+    // ⚫ Black tasks
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+
+    if (tasks.length === 0) {
+      doc.text("— No tasks —", 20, y);
+      y += 8;
+    } else {
+      tasks.forEach((task, i) => {
+        if (y > 280) { // add new page if space is low
+          doc.addPage();
+          y = 20;
+        }
+        doc.text(`${i + 1}. ${task}`, 20, y);
+        y += 8;
+      });
+    }
+
+    y += 6; // space between sections
+  });
+
+  // ✅ Save with filename based on date
+  const safeDate = dateTitle.replace(/[\s,]/g, "_");
+  doc.save(`diary_tasks_${safeDate}.pdf`);
+});
 
 </script>
 
